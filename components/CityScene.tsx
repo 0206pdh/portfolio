@@ -2,699 +2,1091 @@
 
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface SkillFloor { floor: string; color: string; items: string[] }
-export interface BldData {
-  id: string; name: string; subtitle: string; description: string; link: string
-  tags: string[]; stats?: { label: string; value: string }[]; skills?: SkillFloor[]
-  x: number; z: number; w: number; d: number; h: number
-  type: 'main' | 'pinned' | 'skills' | 'other'
-  base: number; accent: number; wire: number
+type TowerKind = 'hero' | 'project' | 'skills' | 'education'
+type SkillIcon =
+  | 'aws'
+  | 'python'
+  | 'fastapi'
+  | 'docker'
+  | 'typescript'
+  | 'database'
+  | 'algorithm'
+  | 'software'
+  | 'postgres'
+  | 'redis'
+  | 'langgraph'
+  | 'ml'
+  | 'extension'
+  | 'javascript'
+  | 'notion'
+  | 'boj'
+  | 'three'
+  | 'backend'
+
+interface SkillTag {
+  label: string
+  icon: SkillIcon
+  color: string
 }
-interface ContribDay { date: string; count: number; level: number }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const BG_COLOR = 0x1c3050
-const FLOOR_H  = 1.3
+interface TowerData {
+  id: string
+  kind: TowerKind
+  name: string
+  subtitle: string
+  period?: string
+  summary: string
+  link?: string
+  tags: SkillTag[]
+  stats?: { label: string; value: string }[]
+  details?: string[]
+  x: number
+  z: number
+  w: number
+  d: number
+  h: number
+  base: number
+  glow: number
+  wire: number
+}
 
-const BUILDINGS: BldData[] = [
+const BG = 0x07111f
+const FLOOR_HEIGHT = 1.32
+
+const TAG = (label: string, icon: SkillIcon, color: string): SkillTag => ({ label, icon, color })
+
+const TOWERS: TowerData[] = [
   {
-    id: 'main', name: '@0206pdh', subtitle: 'GitHub Profile · 23 Public Repos',
-    description: 'Cloud & Backend Engineer in training based in South Korea. Studying AWS infrastructure, DevOps pipelines, and systems design. 23 public repos spanning fintech AI pipelines, browser extensions, crypto bots, and competitive programming.',
-    link: 'https://github.com/0206pdh',
-    tags: ['AWS', 'Python', 'FastAPI', 'Docker', 'Node.js', 'Java', 'TypeScript'],
-    stats: [{ label: 'Public Repos', value: '23' }, { label: 'Languages', value: '5+' }, { label: 'Domain', value: 'Cloud/Backend' }],
-    x: 0, z: 0, w: 2.8, d: 2.8, h: 14,
-    type: 'main', base: 0x0e1e50, accent: 0x3366ff, wire: 0x6699ff,
-  },
-  {
-    id: 'fin_spring', name: 'fin_spring', subtitle: 'Financial Event-Driven Market Impact System',
-    description: 'Real-time financial news → FX directional bias + sector market pressure. LangGraph 3-step chain handles event classification, FX channel identification, and keyword generation. Rule-based scoring — explainable, not speculative.',
-    link: 'https://github.com/0206pdh/fin_spring',
-    tags: ['Python', 'FastAPI', 'TimescaleDB', 'pgvector', 'Redis', 'LangGraph', 'GPT-4o-mini', 'Docker'],
-    stats: [{ label: 'Query Speed', value: '−99.7%' }, { label: 'Time-series', value: '−93%' }, { label: 'Parse Errors', value: '0%' }],
-    x: 5, z: 0, w: 1.9, d: 1.9, h: 9,
-    type: 'pinned', base: 0x0c1840, accent: 0x2255cc, wire: 0x4477ee,
-  },
-  {
-    id: 'yt_filter', name: 'YT Comment Filter', subtitle: 'YouTube Live Toxic Comment Filter',
-    description: 'Chrome extension + FastAPI backend detecting toxic YouTube live comments using a local ML model. Privacy-first — no external API calls. Containerized with Docker. AWS ECS Fargate migration planned.',
-    link: 'https://github.com/0206pdh/youtube_live_comment_filter',
-    tags: ['Python', 'FastAPI', 'JavaScript', 'Chrome Extension', 'Docker', 'ML', 'AWS ECS'],
-    stats: [{ label: 'Inference', value: 'Local ML' }, { label: 'Deploy', value: 'Docker' }, { label: 'Roadmap', value: 'AWS ECS' }],
-    x: -5, z: 0, w: 1.7, d: 1.7, h: 7,
-    type: 'pinned', base: 0x111440, accent: 0x4455dd, wire: 0x6677ff,
-  },
-  {
-    id: 'algonotion', name: 'AlgoNotion', subtitle: 'Baekjoon → Notion Chrome Extension',
-    description: 'Chrome extension (Manifest V3) that auto-captures accepted Baekjoon OJ solutions and syncs them into Notion. Enriches entries via solved.ac API (title + difficulty).',
-    link: 'https://github.com/0206pdh/AlgoNotion_Extention',
-    tags: ['JavaScript', 'Chrome Extension', 'Notion API', 'solved.ac API', 'Manifest V3'],
-    stats: [{ label: 'Platform', value: 'Chrome MV3' }, { label: 'Sync', value: 'Auto' }, { label: 'APIs', value: 'Notion + solved.ac' }],
-    x: 0.5, z: 5, w: 1.5, d: 1.5, h: 5,
-    type: 'pinned', base: 0x0d1838, accent: 0x2255bb, wire: 0x4477dd,
-  },
-  {
-    id: 'skills', name: 'Tech Stack', subtitle: 'Skills Tower — 5 Domains',
-    description: 'Each floor represents a skill domain. Ground floor: Cloud & DevOps. Upper floors: Backend, Database, AI/LLM, Languages.',
-    link: 'https://github.com/0206pdh',
-    tags: ['AWS', 'Docker', 'Python', 'FastAPI', 'PostgreSQL', 'Redis', 'LangGraph', 'TypeScript'],
-    stats: [{ label: 'Cloud', value: 'AWS + Docker' }, { label: 'Backend', value: 'Py · Node · Spring' }, { label: 'AI', value: 'LangGraph + OpenAI' }],
-    skills: [
-      { floor: 'Cloud & DevOps', color: '#4488ff', items: ['AWS (EC2, S3, RDS, IAM)', 'Docker', 'Linux / Shell', 'GitHub Actions CI/CD'] },
-      { floor: 'Backend',        color: '#9944ee', items: ['Python / FastAPI', 'Node.js / Express', 'Java / Spring', 'REST API Design'] },
-      { floor: 'Database',       color: '#22ddee', items: ['PostgreSQL', 'Redis', 'MySQL', 'TimescaleDB / pgvector'] },
-      { floor: 'AI / LLM',      color: '#ee44cc', items: ['OpenAI API / Function Calling', 'LangGraph', 'Local ML Inference', 'pgvector Semantic Search'] },
-      { floor: 'Languages',      color: '#44ee88', items: ['Python', 'Java', 'JavaScript', 'TypeScript', 'SQL'] },
+    id: 'hero',
+    kind: 'hero',
+    name: 'Dohyun Park',
+    subtitle: 'Cloud, backend, and interactive web portfolio',
+    period: '2020 - 2026',
+    summary:
+      'Computer Engineering student focused on AWS, backend systems, and practical product building.',
+    details: [
+      'Kwangwoon University, Department of Computer Engineering',
+      'Built projects across finance, browser extensions, automation, and AI-assisted systems',
+      'Interested in infrastructure, APIs, data flow, and maintainable service design',
     ],
-    x: -7, z: -2, w: 2.2, d: 2.2, h: 11,
-    type: 'skills', base: 0x080e20, accent: 0x2244cc, wire: 0x4466ee,
+    tags: [
+      TAG('AWS', 'aws', '#ffb14a'),
+      TAG('Python', 'python', '#69a8ff'),
+      TAG('FastAPI', 'fastapi', '#3dd7b2'),
+      TAG('Docker', 'docker', '#4ea1ff'),
+      TAG('TypeScript', 'typescript', '#5b9dff'),
+    ],
+    stats: [
+      { label: 'School', value: 'Kwangwoon' },
+      { label: 'Major', value: 'CSE' },
+      { label: 'Focus', value: 'Cloud' },
+    ],
+    x: 0,
+    z: 0,
+    w: 3.2,
+    d: 3.2,
+    h: 15,
+    base: 0x102746,
+    glow: 0x67a9ff,
+    wire: 0x8ac2ff,
   },
-  { id: 'financial_ts', name: 'Market Impact TS', subtitle: 'Financial Event System v1',
-    description: 'Earlier TypeScript-heavy version of the financial market impact system. Same FX/sector analysis concept, full-stack with OpenAI integration.',
-    link: 'https://github.com/0206pdh/Financial-Event-Driven-Market-Impact-System',
-    tags: ['TypeScript', 'FastAPI', 'PostgreSQL', 'OpenAI'],
-    x: 8.5, z: -3.5, w: 1.4, d: 1.4, h: 7.5,
-    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
-  { id: 'algobot', name: 'AlgoBot', subtitle: 'Crypto Trading Bot with GUI',
-    description: 'Python crypto trading bot supporting live trading, backtesting, simulations, and strategy optimization.',
-    link: 'https://github.com/0206pdh/algobot',
-    tags: ['Python', 'GUI', 'Crypto', 'Backtesting'],
-    x: -8.5, z: -3.5, w: 1.4, d: 1.4, h: 6,
-    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
-  { id: 'road_construct', name: 'Road Construct', subtitle: 'Road Construction Alert System',
-    description: 'Node.js + MongoDB backend marking road construction info on a map and alerting nearby users.',
-    link: 'https://github.com/0206pdh/Road_Construct',
-    tags: ['Node.js', 'MongoDB', 'JavaScript'],
-    x: 6.5, z: -7, w: 1.2, d: 1.2, h: 4.5,
-    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
-  { id: 'coding_hub', name: 'Coding Test Hub', subtitle: 'Baekjoon Auto-Push Repository',
-    description: 'Automated Baekjoon OJ solution archive powered by BaekjoonHub. Java-based competitive programming history.',
-    link: 'https://github.com/0206pdh/coding-test-hub',
-    tags: ['Java', 'BaekjoonHub', 'Algorithms'],
-    x: -6.5, z: -7, w: 1.2, d: 1.2, h: 5,
-    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
-  { id: 'toxicfree', name: 'ToxicFree', subtitle: 'Toxic Comment Filter (v1)',
-    description: 'Early Chrome extension for filtering toxic YouTube comments. Predecessor to the YouTube Live Comment Filter.',
-    link: 'https://github.com/0206pdh/ToxicFree_Extension',
-    tags: ['Chrome Extension', 'AI', 'JavaScript'],
-    x: 3.5, z: -8.5, w: 1.1, d: 1.1, h: 4,
-    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
-  { id: 'serverless', name: 'Serverless Tax', subtitle: 'Serverless Tax Calculator',
-    description: 'JavaScript-based serverless tax calculation service.',
-    link: 'https://github.com/0206pdh/serverless-tax-calculate',
-    tags: ['JavaScript', 'Serverless'],
-    x: -3.5, z: -8.5, w: 1.0, d: 1.0, h: 3,
-    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
-  { id: 'safe_way', name: 'SafeWay', subtitle: 'Safe Route Navigation App',
-    description: 'JavaScript application for finding safe routes.',
-    link: 'https://github.com/0206pdh/safe_way',
-    tags: ['JavaScript', 'Maps'],
-    x: 9.5, z: 2.5, w: 1.0, d: 1.0, h: 3,
-    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
-  { id: 'db_project', name: 'DB Project', subtitle: 'Database Course Project',
-    description: 'Java-based database management system developed as a course assignment.',
-    link: 'https://github.com/0206pdh/DataBase_project',
-    tags: ['Java', 'Database', 'SQL'],
-    x: -9.5, z: 2.5, w: 1.0, d: 1.0, h: 2.5,
-    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
-  { id: 'aws_library', name: 'AWS Library', subtitle: 'Cloud Library Management CLI',
-    description: 'Python CLI-based library system with CSV data loading, book/member management, and checkout tracking.',
-    link: 'https://github.com/0206pdh/aws13th-library-system',
-    tags: ['Python', 'AWS', 'CLI'],
-    x: 7, z: 6, w: 1.0, d: 1.0, h: 2,
-    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
+  {
+    id: 'education',
+    kind: 'education',
+    name: 'Kwangwoon University',
+    subtitle: 'Department of Computer Engineering',
+    period: 'Mar 2020 - Feb 2026',
+    summary:
+      'Academic foundation in software, algorithms, databases, systems, and engineering practice.',
+    details: [
+      'Bachelor track in Computer Engineering',
+      'Coursework reflected in database and algorithm projects',
+      'Portfolio direction shaped around real implementation, not only theory',
+    ],
+    tags: [
+      TAG('Computer Eng.', 'software', '#94a3ff'),
+      TAG('Algorithms', 'algorithm', '#f6aa3a'),
+      TAG('Database', 'database', '#65d4ff'),
+      TAG('Software', 'software', '#8ae0c3'),
+    ],
+    stats: [
+      { label: 'Duration', value: '6 yrs' },
+      { label: 'Track', value: 'B.S.' },
+      { label: 'Base', value: 'Core CS' },
+    ],
+    x: -7,
+    z: -1.8,
+    w: 2.2,
+    d: 2.2,
+    h: 10,
+    base: 0x112033,
+    glow: 0x7ee0c3,
+    wire: 0xa1f2db,
+  },
+  {
+    id: 'skills',
+    kind: 'skills',
+    name: 'Tech Stack Tower',
+    subtitle: 'Core tools used across projects',
+    summary:
+      'Hands-on stack centered on cloud deployment, backend APIs, data stores, and applied AI.',
+    details: [
+      'Cloud: AWS, Docker, Linux, CI/CD',
+      'Backend: FastAPI, Node.js, Spring',
+      'Data: PostgreSQL, Redis, MySQL, TimescaleDB',
+      'AI: OpenAI API, LangGraph, local inference, pgvector',
+    ],
+    tags: [
+      TAG('AWS', 'aws', '#ffb14a'),
+      TAG('Docker', 'docker', '#4ea1ff'),
+      TAG('FastAPI', 'fastapi', '#3dd7b2'),
+      TAG('PostgreSQL', 'postgres', '#648dff'),
+      TAG('Redis', 'redis', '#ff6c64'),
+      TAG('LangGraph', 'langgraph', '#9ce26b'),
+    ],
+    stats: [
+      { label: 'Cloud', value: 'AWS' },
+      { label: 'Backend', value: 'API' },
+      { label: 'Data', value: 'SQL' },
+    ],
+    x: 6.8,
+    z: -1.6,
+    w: 2.4,
+    d: 2.4,
+    h: 11.4,
+    base: 0x131d31,
+    glow: 0xb38cff,
+    wire: 0xcfb3ff,
+  },
+  {
+    id: 'fin_spring',
+    kind: 'project',
+    name: 'Financial Event-Driven Market Impact System',
+    subtitle: 'Pinned project',
+    summary:
+      'Pipeline that reads financial events and turns them into explainable market-impact signals.',
+    details: [
+      'FastAPI service with TimescaleDB, Redis, and pgvector',
+      'Focused on structured reasoning over speculative output',
+      'Optimized query and time-series access around real use patterns',
+    ],
+    link: 'https://github.com/0206pdh/fin_spring',
+    tags: [
+      TAG('FastAPI', 'fastapi', '#3dd7b2'),
+      TAG('TimescaleDB', 'database', '#65d4ff'),
+      TAG('Redis', 'redis', '#ff6c64'),
+      TAG('pgvector', 'database', '#7bd3ff'),
+      TAG('Docker', 'docker', '#4ea1ff'),
+    ],
+    stats: [
+      { label: 'Type', value: 'Backend' },
+      { label: 'Infra', value: 'Docker' },
+      { label: 'Theme', value: 'Finance' },
+    ],
+    x: -4.2,
+    z: 5.7,
+    w: 1.8,
+    d: 1.8,
+    h: 8.8,
+    base: 0x10213a,
+    glow: 0x4f8dff,
+    wire: 0x83b8ff,
+  },
+  {
+    id: 'yt_filter',
+    kind: 'project',
+    name: 'YouTube Live Comment Filter',
+    subtitle: 'Pinned project',
+    summary:
+      'Chrome extension and FastAPI backend for filtering harmful live chat with local inference.',
+    details: [
+      'Privacy-conscious setup without depending on third-party moderation APIs',
+      'Containerized architecture prepared for AWS deployment',
+      'Designed around real-time handling and practical extension workflow',
+    ],
+    link: 'https://github.com/0206pdh/youtube_live_comment_filter',
+    tags: [
+      TAG('Python', 'python', '#69a8ff'),
+      TAG('FastAPI', 'fastapi', '#3dd7b2'),
+      TAG('Chrome Ext.', 'extension', '#5b8dff'),
+      TAG('Docker', 'docker', '#4ea1ff'),
+      TAG('ML', 'ml', '#78d68f'),
+    ],
+    stats: [
+      { label: 'Inference', value: 'Local' },
+      { label: 'Client', value: 'Chrome' },
+      { label: 'Deploy', value: 'AWS' },
+    ],
+    x: 4.5,
+    z: 5.4,
+    w: 1.7,
+    d: 1.7,
+    h: 7.4,
+    base: 0x191f3e,
+    glow: 0xf08ad8,
+    wire: 0xffb6eb,
+  },
+  {
+    id: 'algonotion',
+    kind: 'project',
+    name: 'AlgoNotion Extension',
+    subtitle: 'Pinned project',
+    summary:
+      'Browser workflow that captures solved problems and syncs them into a structured Notion database.',
+    details: [
+      'Built on Chrome Manifest V3',
+      'Connects accepted Baekjoon history with solved.ac metadata',
+      'Automates a repetitive developer workflow into a usable product',
+    ],
+    link: 'https://github.com/0206pdh/AlgoNotion_Extention',
+    tags: [
+      TAG('JavaScript', 'javascript', '#ffd54d'),
+      TAG('Notion API', 'notion', '#a0adba'),
+      TAG('Manifest V3', 'extension', '#5b8dff'),
+      TAG('solved.ac', 'boj', '#59d0ff'),
+    ],
+    stats: [
+      { label: 'Mode', value: 'Auto' },
+      { label: 'Source', value: 'BOJ' },
+      { label: 'Target', value: 'Notion' },
+    ],
+    x: 0.4,
+    z: 7.1,
+    w: 1.55,
+    d: 1.55,
+    h: 6.1,
+    base: 0x11243b,
+    glow: 0x70dfff,
+    wire: 0xacf0ff,
+  },
 ]
 
-const SKILL_FLOORS: { color: number; h: number; label: string; items: string[] }[] = [
-  { color: 0x5588ff, h: 2.2, label: 'Cloud & DevOps', items: ['AWS EC2/S3/RDS', 'Docker', 'Linux', 'GitHub Actions'] },
-  { color: 0x9944ee, h: 2.0, label: 'Backend',        items: ['FastAPI', 'Node.js', 'Spring', 'REST API'] },
-  { color: 0x22ccdd, h: 2.2, label: 'Database',       items: ['PostgreSQL', 'Redis', 'MySQL', 'TimescaleDB'] },
-  { color: 0xdd44bb, h: 2.0, label: 'AI / LLM',       items: ['OpenAI API', 'LangGraph', 'Local ML', 'pgvector'] },
-  { color: 0x44dd88, h: 2.0, label: 'Languages',      items: ['Python', 'Java', 'TypeScript', 'SQL'] },
+const STREAMS: Array<[string, string]> = [
+  ['hero', 'education'],
+  ['hero', 'skills'],
+  ['hero', 'fin_spring'],
+  ['hero', 'yt_filter'],
+  ['hero', 'algonotion'],
 ]
 
-const STREAM_PAIRS = [
-  ['main', 'fin_spring'], ['main', 'yt_filter'], ['main', 'algonotion'],
-  ['main', 'skills'], ['fin_spring', 'financial_ts'], ['yt_filter', 'toxicfree'],
-]
-
-// ─── Texture helpers ──────────────────────────────────────────────────────────
-function makeCloudTex(): THREE.CanvasTexture {
-  const s = 256, c = document.createElement('canvas')
-  c.width = s; c.height = s
-  const ctx = c.getContext('2d')!
-  const g = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2)
-  g.addColorStop(0,    'rgba(220,235,255,1)')
-  g.addColorStop(0.35, 'rgba(195,215,255,0.72)')
-  g.addColorStop(0.7,  'rgba(170,200,255,0.28)')
-  g.addColorStop(1,    'rgba(0,0,0,0)')
-  ctx.fillStyle = g; ctx.fillRect(0, 0, s, s)
-  return new THREE.CanvasTexture(c)
+function SkillGlyph({ icon, color }: { icon: SkillIcon; color: string }) {
+  const common = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' }
+  switch (icon) {
+    case 'aws':
+      return <svg {...common}><path d="M6 15.5c3.2 2 8.1 2 11.7-.1" stroke={color} strokeWidth="1.8" strokeLinecap="round" /><path d="M8.3 13.2l1.6-5.4h1.4l1.6 5.4m-2.4-1.4h1.7" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M15.3 8.4h2.2c.9 0 1.5.5 1.5 1.3 0 .8-.6 1.3-1.5 1.3h-2.2V8.4Zm0 2.6h2.4c1 0 1.6.5 1.6 1.4 0 .8-.6 1.4-1.6 1.4h-2.4V11Z" stroke={color} strokeWidth="1.5" strokeLinejoin="round" /></svg>
+    case 'docker':
+      return <svg {...common}><path d="M6 13.5h10.2c1 0 1.8-.3 2.3-.8.6-.6 1-1.5 1-2.8-.5.2-1.2.2-1.8 0-.3-1.2-1.1-1.9-2.3-2.2-.3 1-.2 1.7.2 2.3H6v3.5Zm0 0c0 2 1.3 3.5 3.6 3.5 3.6 0 6.4-1.2 8.3-3.5" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /><path d="M7 10.3h2v2H7zm2.3 0h2v2h-2zm2.3 0h2v2h-2zm-2.3-2.3h2v2h-2zm2.3 0h2v2h-2z" fill={color} /></svg>
+    case 'python':
+      return <svg {...common}><path d="M12 5.5c-3.4 0-3.2 1.5-3.2 1.5V9h6.4V7.3S15.4 5.5 12 5.5Z" stroke={color} strokeWidth="1.7" /><circle cx="10.2" cy="7.2" r="1" fill={color} /><path d="M12 18.5c3.4 0 3.2-1.5 3.2-1.5V15H8.8v1.7S8.6 18.5 12 18.5Z" stroke={color} strokeWidth="1.7" /><circle cx="13.8" cy="16.8" r="1" fill={color} /><path d="M8.8 9v6M15.2 9c2 0 3.3.8 3.3 3s-1.3 3-3.3 3M8.8 15c-2 0-3.3-.8-3.3-3s1.3-3 3.3-3" stroke={color} strokeWidth="1.7" strokeLinecap="round" /></svg>
+    case 'fastapi':
+      return <svg {...common}><path d="M18.5 5.5L9.2 18.5h4.2l1.4-4.4H11" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    case 'typescript':
+      return <svg {...common}><rect x="4.5" y="4.5" width="15" height="15" rx="3" stroke={color} strokeWidth="1.7" /><path d="M8.5 9.2h7M12 9.2v7M14.4 12.2c.2-.4.7-.8 1.5-.8 1 0 1.7.5 1.7 1.3 0 2-3.3 1-3.3 2.9 0 .7.7 1.4 1.9 1.4.8 0 1.5-.2 2-.6" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></svg>
+    case 'database':
+      return <svg {...common}><ellipse cx="12" cy="7" rx="5.5" ry="2.5" stroke={color} strokeWidth="1.7" /><path d="M6.5 7v5c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5V7M6.5 12v5c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5v-5" stroke={color} strokeWidth="1.7" /></svg>
+    case 'algorithm':
+      return <svg {...common}><path d="M8 6.5h8M8 12h8M8 17.5h8M6.2 6.5h.1M6.2 12h.1M6.2 17.5h.1" stroke={color} strokeWidth="1.9" strokeLinecap="round" /><path d="M15.5 6.5l2.5 5.5-2.5 5.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    case 'software':
+      return <svg {...common}><rect x="5" y="6" width="14" height="10" rx="2.2" stroke={color} strokeWidth="1.7" /><path d="M9 19h6M12 16v3" stroke={color} strokeWidth="1.7" strokeLinecap="round" /><path d="M9 10l2 2-2 2M13 14h2.5" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    case 'postgres':
+      return <svg {...common}><path d="M9 17c-1.2 0-2-.8-2-2.1V9.1C7 6.9 8.5 5.5 10.5 5.5h1c3.6 0 5.5 2 5.5 5.1 0 2.8-1.6 4.4-4.1 4.4-.7 0-1.3-.1-1.9-.4V18c0 .6-.5 1-1 1" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /><path d="M10.7 9.5c.7.8 1.3 1.7 1.8 2.8" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></svg>
+    case 'redis':
+      return <svg {...common}><path d="M6 9.5l6-2 6 2-6 2-6-2Zm0 5l6 2 6-2M6 9.5v5M18 9.5v5" stroke={color} strokeWidth="1.7" strokeLinejoin="round" /><path d="M9.5 8.3h5" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></svg>
+    case 'langgraph':
+      return <svg {...common}><circle cx="8" cy="8" r="2.2" stroke={color} strokeWidth="1.7" /><circle cx="16.5" cy="7.5" r="2" stroke={color} strokeWidth="1.7" /><circle cx="12" cy="16" r="2.2" stroke={color} strokeWidth="1.7" /><path d="M9.8 9.1l4.7-1M9.3 9.8l1.8 4.1M14.8 9.3l-1.8 4" stroke={color} strokeWidth="1.6" strokeLinecap="round" /></svg>
+    case 'ml':
+      return <svg {...common}><path d="M6.5 17.5V7.5l4 5 4-5v10" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M16.5 16h2M18.5 14v4" stroke={color} strokeWidth="1.8" strokeLinecap="round" /></svg>
+    case 'extension':
+      return <svg {...common}><path d="M8 6.5h4.5a2 2 0 0 1 0 4H11a2 2 0 1 0 0 4h1.5a2 2 0 0 1 0 4H8" stroke={color} strokeWidth="1.8" strokeLinecap="round" /><path d="M12 8.5h4M14 6.5v4M12 15.5h4M14 13.5v4" stroke={color} strokeWidth="1.8" strokeLinecap="round" /></svg>
+    case 'javascript':
+      return <svg {...common}><rect x="5" y="5" width="14" height="14" rx="3" stroke={color} strokeWidth="1.7" /><path d="M10.2 9v6c0 1-.5 1.7-1.8 1.7-.7 0-1.2-.1-1.7-.5M13.6 15.8c.4.5 1 .9 1.9.9.9 0 1.5-.4 1.5-1.1 0-.7-.4-1-1.6-1.5-1.2-.5-2-.9-2-2.3 0-1.2.9-2.1 2.4-2.1 1 0 1.8.3 2.3 1" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></svg>
+    case 'notion':
+      return <svg {...common}><rect x="5" y="5" width="14" height="14" rx="2.2" stroke={color} strokeWidth="1.7" /><path d="M9 15V9l6 6V9" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    case 'boj':
+      return <svg {...common}><path d="M7 12a5 5 0 0 1 10 0c0 2.7-2.3 5-5 5" stroke={color} strokeWidth="1.8" strokeLinecap="round" /><path d="M12 8.2v4l2.8 1.6M8 18h8" stroke={color} strokeWidth="1.8" strokeLinecap="round" /></svg>
+    case 'three':
+      return <svg {...common}><path d="M12 5.5l6 3.5v7L12 19.5 6 16V9l6-3.5Zm0 0v14" stroke={color} strokeWidth="1.6" strokeLinejoin="round" /><path d="M6 9l6 3.5L18 9" stroke={color} strokeWidth="1.6" strokeLinejoin="round" /></svg>
+    case 'backend':
+      return <svg {...common}><path d="M7 8.5h10M7 12h10M7 15.5h6" stroke={color} strokeWidth="1.9" strokeLinecap="round" /><path d="M17 14.5 19 12l-2-2.5" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  }
 }
 
-function makeIconTex(text: string, color: string): THREE.CanvasTexture {
-  const w = 220, h = 46, c = document.createElement('canvas')
-  c.width = w; c.height = h
-  const ctx = c.getContext('2d')!
-  ctx.clearRect(0, 0, w, h)
-  ctx.fillStyle = color; ctx.globalAlpha = 0.92
-  ctx.font = 'bold 14px system-ui, -apple-system, sans-serif'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(text, 8, h / 2)
-  return new THREE.CanvasTexture(c)
-}
-
-// ─── Panel ────────────────────────────────────────────────────────────────────
-function Panel({ bld, onClose }: { bld: BldData; onClose: () => void }) {
-  const hex = '#' + bld.accent.toString(16).padStart(6, '0')
+function SkillChip({ tag, dark = false }: { tag: SkillTag; dark?: boolean }) {
   return (
-    <div style={{ position:'fixed', top:0, right:0, height:'100%', width:400,
-      background:'rgba(5,12,32,0.94)', backdropFilter:'blur(20px)',
-      borderLeft:`1px solid ${hex}30`, zIndex:200, overflowY:'auto',
-      animation:'slideIn 0.3s ease' }}>
-      <style>{`@keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}`}</style>
-      <div style={{ padding:'28px 26px 18px', borderBottom:`1px solid ${hex}18` }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '8px 12px',
+        borderRadius: 16,
+        border: `1px solid ${dark ? `${tag.color}2a` : 'rgba(20, 35, 58, 0.08)'}`,
+        background: dark ? 'rgba(12, 25, 43, 0.68)' : 'rgba(255,255,255,0.84)',
+        color: dark ? '#dcecff' : '#2c4666',
+        fontSize: '0.8rem',
+        fontWeight: 600,
+        letterSpacing: '0.01em',
+      }}
+    >
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 28,
+          height: 28,
+          borderRadius: 10,
+          background: `${tag.color}20`,
+          boxShadow: dark ? `inset 0 0 0 1px ${tag.color}1a` : 'none',
+        }}
+      >
+        <SkillGlyph icon={tag.icon} color={tag.color} />
+      </span>
+      {tag.label}
+    </span>
+  )
+}
+
+function Panel({ tower, onClose }: { tower: TowerData; onClose: () => void }) {
+  const accent = `#${tower.glow.toString(16).padStart(6, '0')}`
+  const label =
+    tower.kind === 'hero'
+      ? 'Profile'
+      : tower.kind === 'education'
+        ? 'Education'
+        : tower.kind === 'skills'
+          ? 'Stack'
+          : 'Project'
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 22,
+        right: 22,
+        bottom: 22,
+        width: 'min(420px, calc(100vw - 44px))',
+        borderRadius: 28,
+        background: 'rgba(247, 250, 255, 0.94)',
+        border: `1px solid ${accent}40`,
+        boxShadow: '0 28px 80px rgba(0, 0, 0, 0.32)',
+        color: '#14233a',
+        zIndex: 220,
+        overflowY: 'auto',
+        backdropFilter: 'blur(18px)',
+        animation: 'panelIn 220ms ease',
+      }}
+    >
+      <style>{`
+        @keyframes panelIn {
+          from { transform: translateX(18px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+      `}</style>
+      <div style={{ padding: '28px 28px 18px', borderBottom: '1px solid rgba(20, 35, 58, 0.08)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <div style={{ fontSize:'0.58rem', letterSpacing:'0.2em', textTransform:'uppercase', color:hex, opacity:.6, marginBottom:7 }}>
-              {bld.type==='main'?'GitHub Profile':bld.type==='skills'?'Skills Tower':bld.type==='pinned'?'Pinned Repo':'Repository'}
+            <div
+              style={{
+                fontSize: '0.68rem',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: accent,
+                fontWeight: 700,
+                marginBottom: 10,
+              }}
+            >
+              {label}
             </div>
-            <h2 style={{ fontSize:'1.2rem', fontWeight:700, color:'#d8eaff', lineHeight:1.2, marginBottom:5 }}>{bld.name}</h2>
-            <p style={{ fontSize:'0.71rem', color:'rgba(140,175,240,0.5)', lineHeight:1.4 }}>{bld.subtitle}</p>
+            <h2 style={{ fontSize: '1.45rem', lineHeight: 1.15, marginBottom: 6 }}>{tower.name}</h2>
+            <p style={{ fontSize: '0.92rem', color: '#4a617f', lineHeight: 1.5 }}>{tower.subtitle}</p>
+            {tower.period && (
+              <p style={{ marginTop: 8, fontSize: '0.8rem', color: '#627795', fontWeight: 600 }}>{tower.period}</p>
+            )}
           </div>
-          <button onClick={onClose} style={{ background:'none', border:`1px solid rgba(80,120,200,0.2)`,
-            borderRadius:6, color:'rgba(140,175,240,0.4)', cursor:'pointer', padding:'5px 10px',
-            fontSize:'0.7rem', marginLeft:10, transition:'all 0.2s' }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=hex;e.currentTarget.style.color='#fff'}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(80,120,200,0.2)';e.currentTarget.style.color='rgba(140,175,240,0.4)'}}>
-            ✕
+          <button
+            onClick={onClose}
+            aria-label="Close panel"
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              border: '1px solid rgba(20, 35, 58, 0.12)',
+              background: 'rgba(255,255,255,0.72)',
+              color: '#243854',
+              cursor: 'pointer',
+              fontSize: '1rem',
+            }}
+          >
+            ×
           </button>
         </div>
       </div>
-      <div style={{ padding:'20px 26px' }}>
-        {bld.stats && (
-          <div style={{ display:'flex', gap:8, marginBottom:18 }}>
-            {bld.stats.map(s => (
-              <div key={s.label} style={{ flex:1, background:`${hex}10`, border:`1px solid ${hex}22`, borderRadius:7, padding:'10px 12px' }}>
-                <div style={{ fontSize:'0.92rem', fontWeight:700, color:hex, marginBottom:2 }}>{s.value}</div>
-                <div style={{ fontSize:'0.6rem', color:'rgba(120,155,215,0.45)' }}>{s.label}</div>
+
+      <div style={{ padding: 28 }}>
+        {tower.stats && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
+            {tower.stats.map((stat) => (
+              <div
+                key={stat.label}
+                style={{
+                  padding: '12px 12px 10px',
+                  borderRadius: 16,
+                  background: `${accent}12`,
+                  border: `1px solid ${accent}26`,
+                }}
+              >
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#11253f', marginBottom: 4 }}>{stat.value}</div>
+                <div style={{ fontSize: '0.68rem', color: '#5f7390' }}>{stat.label}</div>
               </div>
             ))}
           </div>
         )}
-        <p style={{ fontSize:'0.84rem', color:'rgba(160,195,255,0.62)', lineHeight:1.75, marginBottom:20 }}>{bld.description}</p>
-        {bld.skills && (
-          <div style={{ marginBottom:20 }}>
-            <p style={{ fontSize:'0.58rem', letterSpacing:'0.18em', textTransform:'uppercase', color:'rgba(100,140,210,0.38)', marginBottom:10 }}>Floors (bottom → top)</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-              {bld.skills.map(f => (
-                <div key={f.floor} style={{ background:`${f.color}0c`, border:`1px solid ${f.color}20`, borderRadius:7, padding:'9px 13px' }}>
-                  <div style={{ fontSize:'0.74rem', fontWeight:600, color:f.color, marginBottom:5 }}>{f.floor}</div>
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-                    {f.items.map(it => <span key={it} style={{ fontSize:'0.63rem', padding:'2px 7px', borderRadius:10, background:`${f.color}14`, color:`${f.color}bb` }}>{it}</span>)}
-                  </div>
+
+        <p style={{ fontSize: '0.95rem', lineHeight: 1.72, color: '#243854', marginBottom: 18 }}>{tower.summary}</p>
+
+        {tower.details && (
+          <div style={{ marginBottom: 20 }}>
+            <div
+              style={{
+                fontSize: '0.68rem',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: '#7185a0',
+                fontWeight: 700,
+                marginBottom: 10,
+              }}
+            >
+              Highlights
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {tower.details.map((detail) => (
+                <div
+                  key={detail}
+                  style={{
+                    padding: '11px 13px',
+                    borderRadius: 14,
+                    background: 'rgba(255,255,255,0.7)',
+                    border: '1px solid rgba(20, 35, 58, 0.08)',
+                    color: '#304661',
+                    fontSize: '0.86rem',
+                    lineHeight: 1.55,
+                  }}
+                >
+                  {detail}
                 </div>
               ))}
             </div>
           </div>
         )}
-        <div style={{ marginBottom:22 }}>
-          <p style={{ fontSize:'0.58rem', letterSpacing:'0.18em', textTransform:'uppercase', color:'rgba(100,140,210,0.38)', marginBottom:8 }}>Stack</p>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
-            {bld.tags.map(t => <span key={t} style={{ fontSize:'0.68rem', padding:'3px 10px', borderRadius:20, background:`${hex}12`, border:`1px solid ${hex}26`, color:`${hex}bb`, fontWeight:500 }}>{t}</span>)}
+
+        <div style={{ marginBottom: 24 }}>
+          <div
+            style={{
+              fontSize: '0.68rem',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: '#7185a0',
+              fontWeight: 700,
+              marginBottom: 10,
+            }}
+          >
+            Stack
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {tower.tags.map((tag) => (
+              <SkillChip key={tag.label} tag={tag} />
+            ))}
           </div>
         </div>
-        <a href={bld.link} target="_blank" rel="noopener noreferrer"
-          style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px',
-            borderRadius:8, textDecoration:'none', fontWeight:600, fontSize:'0.8rem',
-            background:`${hex}18`, border:`1px solid ${hex}35`, color:hex, transition:'all 0.25s' }}
-          onMouseEnter={e=>{e.currentTarget.style.background=`${hex}28`;e.currentTarget.style.boxShadow=`0 0 16px ${hex}28`}}
-          onMouseLeave={e=>{e.currentTarget.style.background=`${hex}18`;e.currentTarget.style.boxShadow='none'}}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
-          </svg>
-          View on GitHub
-        </a>
+
+        {tower.link && (
+          <a
+            href={tower.link}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              height: 48,
+              borderRadius: 16,
+              textDecoration: 'none',
+              background: `linear-gradient(135deg, ${accent}, #ffffff)`,
+              color: '#0d1f36',
+              fontWeight: 800,
+            }}
+          >
+            View GitHub
+          </a>
+        )}
       </div>
     </div>
   )
 }
 
-// ─── HUD ──────────────────────────────────────────────────────────────────────
-function HUD() {
+function Overlay() {
   return (
     <>
-      <div style={{ position:'fixed', bottom:30, left:36, zIndex:100, pointerEvents:'none' }}>
-        <p style={{ fontSize:'0.58rem', letterSpacing:'0.18em', textTransform:'uppercase', color:'rgba(120,160,230,0.5)', marginBottom:4 }}>Cloud & Backend Engineer</p>
-        <h1 style={{ fontSize:'1.45rem', fontWeight:800, letterSpacing:'-0.02em', background:'linear-gradient(120deg,#c8dcff,#80b8ff)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text', margin:0 }}>Dohyun Park</h1>
-        <p style={{ fontSize:'0.66rem', color:'rgba(120,160,225,0.38)', marginTop:3, fontFamily:'monospace' }}>박도현 · @0206pdh</p>
+      <div
+        style={{
+          position: 'fixed',
+          top: 24,
+          left: 24,
+          zIndex: 120,
+          width: 'min(420px, calc(100vw - 48px))',
+          padding: '22px 22px 20px',
+          borderRadius: 24,
+          background: 'linear-gradient(180deg, rgba(8,18,33,0.8), rgba(8,18,33,0.5))',
+          border: '1px solid rgba(145, 190, 255, 0.16)',
+          backdropFilter: 'blur(16px)',
+          color: '#dfeeff',
+          pointerEvents: 'none',
+        }}
+      >
+        <div style={{ fontSize: '0.72rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#7ec8ff', marginBottom: 10 }}>
+          Portfolio City
+        </div>
+        <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.02, marginBottom: 10 }}>Dohyun Park</h1>
+        <p style={{ color: 'rgba(223, 238, 255, 0.82)', lineHeight: 1.65, fontSize: '0.95rem', marginBottom: 14 }}>
+          Kwangwoon University Computer Engineering student, 2020 to 2026.
+          Building cloud, backend, and automation-focused projects.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {[
+            TAG('AWS', 'aws', '#ffb14a'),
+            TAG('Backend', 'backend', '#6baeff'),
+            TAG('Three.js', 'three', '#d8e0ea'),
+            TAG('Docker', 'docker', '#4ea1ff'),
+          ].map((tag) => (
+            <SkillChip key={tag.label} tag={tag} dark />
+          ))}
+        </div>
       </div>
-      <div style={{ position:'fixed', top:26, right:36, zIndex:100, textAlign:'right', pointerEvents:'none' }}>
-        <p style={{ fontSize:'0.59rem', letterSpacing:'0.1em', color:'rgba(130,165,225,0.38)', lineHeight:2 }}>Drag to rotate · Scroll to zoom · Click a building</p>
+
+      <div
+        style={{
+          position: 'fixed',
+          right: 24,
+          left: 24,
+          bottom: 20,
+          zIndex: 120,
+          display: 'flex',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+        }}
+      >
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: 999,
+            background: 'rgba(8,18,33,0.62)',
+            border: '1px solid rgba(145, 190, 255, 0.12)',
+            color: 'rgba(223, 238, 255, 0.78)',
+            fontSize: '0.8rem',
+            letterSpacing: '0.03em',
+          }}
+        >
+          Drag to rotate · Scroll to zoom · Click a tower
+        </div>
       </div>
     </>
   )
 }
 
-// ─── Main scene ───────────────────────────────────────────────────────────────
 export default function CityScene() {
-  const mountRef      = useRef<HTMLDivElement>(null)
-  const deselectRef   = useRef<(() => void) | null>(null)
-  const cityRef       = useRef<THREE.Group | null>(null)
-  const cloudGroupRef = useRef<THREE.Group | null>(null)
-  const cloudTexRef   = useRef<THREE.CanvasTexture | null>(null)
+  const mountRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef<(() => void) | null>(null)
+  const [selected, setSelected] = useState<TowerData | null>(null)
 
-  const [selected, setSelected] = useState<BldData | null>(null)
-  const [contribs, setContribs] = useState<ContribDay[]>([])
-
-  // ── Fetch contributions ────────────────────────────────────────────────────
   useEffect(() => {
-    fetch('https://github-contributions-api.jogruber.de/v4/0206pdh?y=last')
-      .then(r => r.json())
-      .then(d => setContribs((d.contributions as ContribDay[]).filter((c: ContribDay) => c.level > 0)))
-      .catch(() => {})
-  }, [])
+    const mount = mountRef.current
+    if (!mount) return
 
-  // ── Add contribution clouds when data arrives ──────────────────────────────
-  useEffect(() => {
-    if (contribs.length === 0 || !cityRef.current || !cloudGroupRef.current || !cloudTexRef.current) return
-    const group = cloudGroupRef.current, tex = cloudTexRef.current
-    while (group.children.length) group.remove(group.children[0])
-    contribs.forEach(day => {
-      const lvl = day.level
-      const n = lvl === 1 ? 2 : lvl === 2 ? 3 : lvl === 3 ? 4 : 5
-      const bx = (Math.random() - 0.5) * 22, bz = (Math.random() - 0.5) * 22
-      const by = 7 + lvl * 1.8 + Math.random() * 3
-      for (let k = 0; k < n; k++) {
-        const base = 1.8 + lvl * 1.1, scale = base * (0.6 + Math.random() * 0.8)
-        const mat = new THREE.SpriteMaterial({
-          map: tex, color: new THREE.Color(0xc0d8ff),
-          transparent: true, opacity: 0.06 + lvl * 0.04 + Math.random() * 0.03,
-          depthWrite: false,
-        })
-        const spr = new THREE.Sprite(mat)
-        spr.position.set(bx+(Math.random()-0.5)*base*0.9, by+(Math.random()-0.5)*0.7, bz+(Math.random()-0.5)*base*0.9)
-        spr.scale.set(scale, scale * 0.42, 1)
-        spr.userData = { dx:(Math.random()-0.5)*0.0025, dz:(Math.random()-0.5)*0.0025, fOff:Math.random()*Math.PI*2, fSpd:0.0004+Math.random()*0.0005 }
-        group.add(spr)
-      }
-    })
-  }, [contribs])
-
-  // ── Three.js scene (synchronous) ───────────────────────────────────────────
-  useEffect(() => {
-    const el = mountRef.current
-    if (!el) return
-
-    const W = window.innerWidth, H = window.innerHeight
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
+    const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setSize(W, H)
-    renderer.setClearColor(BG_COLOR)
+    renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
-    el.appendChild(renderer.domElement)
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.1
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    mount.appendChild(renderer.domElement)
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(BG_COLOR)
-    scene.fog = new THREE.Fog(BG_COLOR, 30, 68)   // 멀리까지 보이도록
+    scene.background = new THREE.Color(BG)
+    scene.fog = new THREE.FogExp2(BG, 0.028)
 
-    const camera = new THREE.PerspectiveCamera(22, W / H, 0.1, 200)
-    camera.position.set(0, 8, 22)
-    const lookCur    = new THREE.Vector3(0, 2, 0)
-    const CAM_BASE   = new THREE.Vector3(0, 8, 22)
+    const camera = new THREE.PerspectiveCamera(28, window.innerWidth / window.innerHeight, 0.1, 200)
+    const baseCamera = new THREE.Vector3(0, 10, 24)
+    const camTarget = baseCamera.clone()
+    const lookCurrent = new THREE.Vector3(0, 3, 0)
+    const lookTarget = new THREE.Vector3(0, 3, 0)
+    camera.position.copy(baseCamera)
 
-    // 조명
-    scene.add(new THREE.AmbientLight(0xffffff, 5.5))
-    const sun = new THREE.DirectionalLight(0xeef2ff, 3.0)
-    sun.position.set(10, 20, 10); sun.castShadow = true
-    sun.shadow.mapSize.set(2048, 2048); scene.add(sun)
-    const fill = new THREE.DirectionalLight(0x7799ff, 2.0)
-    fill.position.set(-8, 5, -5); scene.add(fill)
+    const composer = new EffectComposer(renderer)
+    composer.addPass(new RenderPass(scene, camera))
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.9, 0.7, 0.55))
 
-    // City group
+    const ambient = new THREE.AmbientLight(0xd6e8ff, 1.8)
+    scene.add(ambient)
+
+    const moon = new THREE.DirectionalLight(0xbcd7ff, 2.8)
+    moon.position.set(12, 20, 9)
+    moon.castShadow = true
+    moon.shadow.mapSize.set(2048, 2048)
+    moon.shadow.camera.near = 1
+    moon.shadow.camera.far = 80
+    scene.add(moon)
+
+    const fill = new THREE.PointLight(0x63b2ff, 40, 80, 2)
+    fill.position.set(-10, 8, -8)
+    scene.add(fill)
+
     const city = new THREE.Group()
     scene.add(city)
-    cityRef.current = city
 
-    // Ground
-    const gnd = new THREE.Mesh(
-      new THREE.PlaneGeometry(80, 80),
-      new THREE.MeshStandardMaterial({ color: 0x14253c, roughness: 1 })
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(32, 80),
+      new THREE.MeshStandardMaterial({
+        color: 0x0b1628,
+        roughness: 0.9,
+        metalness: 0.2,
+      })
     )
-    gnd.rotation.x = -Math.PI / 2; gnd.receiveShadow = true; city.add(gnd)
-    city.add(new THREE.GridHelper(80, 160, 0x2a4878, 0x162844))
+    ground.rotation.x = -Math.PI / 2
+    ground.receiveShadow = true
+    city.add(ground)
 
-    // Stars
-    const sp = new Float32Array(5000 * 3)
-    for (let i = 0; i < 5000; i++) {
-      const r = 70+Math.random()*90, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1)
-      sp[i*3]=r*Math.sin(ph)*Math.cos(th); sp[i*3+1]=r*Math.sin(ph)*Math.sin(th); sp[i*3+2]=r*Math.cos(ph)
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(12, 12.5, 96),
+      new THREE.MeshBasicMaterial({ color: 0x4a8fff, transparent: true, opacity: 0.26, side: THREE.DoubleSide })
+    )
+    ring.rotation.x = -Math.PI / 2
+    ring.position.y = 0.02
+    city.add(ring)
+
+    const grid = new THREE.GridHelper(40, 40, 0x2d5da2, 0x173152)
+    ;(grid.material as THREE.Material).transparent = true
+    ;(grid.material as THREE.Material).opacity = 0.2
+    city.add(grid)
+
+    const stars = new THREE.BufferGeometry()
+    const starCount = 3200
+    const starPoints = new Float32Array(starCount * 3)
+    for (let i = 0; i < starCount; i++) {
+      const radius = 55 + Math.random() * 45
+      const theta = Math.random() * Math.PI * 2
+      const phi = Math.acos(2 * Math.random() - 1)
+      starPoints[i * 3] = radius * Math.sin(phi) * Math.cos(theta)
+      starPoints[i * 3 + 1] = radius * Math.cos(phi)
+      starPoints[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta)
     }
-    const sg = new THREE.BufferGeometry()
-    sg.setAttribute('position', new THREE.BufferAttribute(sp, 3))
-    scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xaabbee, size: 0.18, sizeAttenuation: true, transparent: true, opacity: 0.6 })))
-
-    // Cloud group
-    const cloudGroup = new THREE.Group()
-    city.add(cloudGroup)
-    cloudGroupRef.current = cloudGroup
-    cloudTexRef.current   = makeCloudTex()
-
-    // ── 창문 불빛 띠 ─────────────────────────────────────────────────────────
-    function addWindowStrips(b: BldData) {
-      const numFloors = Math.max(1, Math.floor(b.h / FLOOR_H))
-      for (let f = 0; f < numFloors; f++) {
-        const y = f * FLOOR_H + FLOOR_H * 0.58
-        if (Math.random() < 0.1) continue
-        const hue = Math.random() < 0.65 ? 0.11 : Math.random() < 0.55 ? 0.62 : 0.08
-        const col = new THREE.Color().setHSL(hue, 0.8, 0.88)
-        const op  = 0.55 + Math.random() * 0.4
-
-        const mkMat = () => new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide })
-
-        // 앞/뒤면
-        const front = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.75, 0.10), mkMat())
-        front.position.set(b.x, y, b.z + b.d / 2 + 0.012); city.add(front)
-        const back  = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.75, 0.10), mkMat())
-        back.position.set(b.x, y, b.z - b.d / 2 - 0.012); back.rotation.y = Math.PI; city.add(back)
-        // 좌/우면
-        const right = new THREE.Mesh(new THREE.PlaneGeometry(b.d * 0.75, 0.10), mkMat())
-        right.position.set(b.x + b.w / 2 + 0.012, y, b.z); right.rotation.y = Math.PI / 2; city.add(right)
-        const left  = new THREE.Mesh(new THREE.PlaneGeometry(b.d * 0.75, 0.10), mkMat())
-        left.position.set(b.x - b.w / 2 - 0.012, y, b.z); left.rotation.y = -Math.PI / 2; city.add(left)
-      }
-    }
-
-    // ── 층 구분선 ────────────────────────────────────────────────────────────
-    function addFloorLines(b: BldData, accentCol: number) {
-      const numFloors = Math.floor(b.h / FLOOR_H)
-      for (let f = 1; f < numFloors; f++) {
-        const sep = new THREE.Mesh(
-          new THREE.BoxGeometry(b.w + 0.06, 0.032, b.d + 0.06),
-          new THREE.MeshBasicMaterial({ color: accentCol, transparent: true, opacity: 0.35 })
-        )
-        sep.position.set(b.x, f * FLOOR_H, b.z); city.add(sep)
-      }
-    }
-
-    function slab(w: number, d: number, x: number, z: number, color: number) {
-      const m = new THREE.Mesh(
-        new THREE.BoxGeometry(w + 0.15, 0.07, d + 0.15),
-        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6 })
+    stars.setAttribute('position', new THREE.BufferAttribute(starPoints, 3))
+    scene.add(
+      new THREE.Points(
+        stars,
+        new THREE.PointsMaterial({
+          color: 0xd8ecff,
+          size: 0.16,
+          transparent: true,
+          opacity: 0.8,
+          sizeAttenuation: true,
+        })
       )
-      m.position.set(x, 0.04, z); city.add(m)
-    }
+    )
 
     const clickables: THREE.Mesh[] = []
+    const towerMap = Object.fromEntries(TOWERS.map((tower) => [tower.id, tower]))
 
-    BUILDINGS.forEach(b => {
-      if (b.type === 'skills') {
-        // 스킬 타워 — 층별로 쌓기
-        let yOff = 0
-        SKILL_FLOORS.forEach(fl => {
-          const geo = new THREE.BoxGeometry(b.w, fl.h - 0.08, b.d)
-          const mat = new THREE.MeshStandardMaterial({
-            color: 0x0c1528, roughness: 0.15, metalness: 0.9,
-            emissive: new THREE.Color(fl.color), emissiveIntensity: 0.32,
+    function addWindowStrips(tower: TowerData) {
+      const levels = Math.max(2, Math.floor(tower.h / FLOOR_HEIGHT))
+      for (let i = 1; i < levels; i++) {
+        const y = i * FLOOR_HEIGHT
+        const strip = new THREE.Mesh(
+          new THREE.BoxGeometry(tower.w + 0.06, 0.04, tower.d + 0.06),
+          new THREE.MeshBasicMaterial({
+            color: tower.glow,
+            transparent: true,
+            opacity: tower.kind === 'hero' ? 0.48 : 0.22,
           })
-          const mesh = new THREE.Mesh(geo, mat)
-          mesh.position.set(b.x, yOff + fl.h / 2, b.z)
-          mesh.castShadow = true
-          mesh.userData = { bldData: b, mat, baseI: 0.32 }
-          clickables.push(mesh); city.add(mesh)
-
-          // 와이어프레임
-          const wm = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({ color: fl.color, wireframe: true, transparent: true, opacity: 0.09 }))
-          wm.position.copy(mesh.position); city.add(wm)
-
-          // 층 구분 띠
-          const sep = new THREE.Mesh(
-            new THREE.BoxGeometry(b.w + 0.1, 0.055, b.d + 0.1),
-            new THREE.MeshBasicMaterial({ color: fl.color, transparent: true, opacity: 0.9 })
-          )
-          sep.position.set(b.x, yOff + 0.04, b.z); city.add(sep)
-
-          // 아이콘 — 층 바닥에 수평으로 눕혀서 배치
-          const colHex = '#' + fl.color.toString(16).padStart(6, '0')
-          fl.items.forEach((item, idx) => {
-            const tex = makeIconTex(item, colHex)
-            const plane = new THREE.Mesh(
-              new THREE.PlaneGeometry(1.05, 0.30),
-              new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false, opacity: 0.88 })
-            )
-            plane.rotation.x = -Math.PI / 2   // 수평으로 눕힘
-            const row = Math.floor(idx / 2), col = idx % 2
-            plane.position.set(
-              b.x + (col - 0.5) * 0.72,
-              yOff + 0.07,
-              b.z + (row - 0.8) * 0.48
-            )
-            city.add(plane)
-          })
-
-          yOff += fl.h
-        })
-
-        // 첨탑
-        const spire = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.025, 0.07, 2.0, 8),
-          new THREE.MeshBasicMaterial({ color: 0x66aaff })
         )
-        spire.position.set(b.x, yOff + 1.0, b.z); city.add(spire)
-        slab(b.w, b.d, b.x, b.z, 0x2244cc)
+        strip.position.set(tower.x, y, tower.z)
+        city.add(strip)
+      }
+    }
 
-      } else {
-        // 일반 타워
-        const eI = b.type === 'main' ? 0.30 : b.type === 'pinned' ? 0.24 : 0.15
-        const geo = new THREE.BoxGeometry(b.w, b.h, b.d)
-        const mat = new THREE.MeshStandardMaterial({
-          color: b.base, roughness: 0.15, metalness: 0.9,
-          emissive: new THREE.Color(b.accent), emissiveIntensity: eI,
+    function addBeacon(tower: TowerData) {
+      const beacon = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.12, 2.6, 8),
+        new THREE.MeshBasicMaterial({ color: tower.glow, transparent: true, opacity: 0.9 })
+      )
+      beacon.position.set(tower.x, tower.h + 1.3, tower.z)
+      city.add(beacon)
+
+      const halo = new THREE.Mesh(
+        new THREE.TorusGeometry(0.5, 0.04, 12, 48),
+        new THREE.MeshBasicMaterial({ color: tower.glow, transparent: true, opacity: 0.75 })
+      )
+      halo.position.set(tower.x, tower.h + 2.5, tower.z)
+      halo.rotation.x = Math.PI / 2
+      halo.userData.spin = 0.01
+      city.add(halo)
+      animatedHalos.push(halo)
+    }
+
+    const animatedHalos: THREE.Mesh[] = []
+
+    TOWERS.forEach((tower) => {
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(tower.w, tower.h, tower.d),
+        new THREE.MeshStandardMaterial({
+          color: tower.base,
+          roughness: 0.22,
+          metalness: 0.78,
+          emissive: new THREE.Color(tower.glow),
+          emissiveIntensity: tower.kind === 'hero' ? 0.44 : 0.24,
         })
-        const mesh = new THREE.Mesh(geo, mat)
-        mesh.position.set(b.x, b.h / 2, b.z)
-        mesh.castShadow = true
-        mesh.userData = { bldData: b, mat, baseI: eI }
-        clickables.push(mesh); city.add(mesh)
-
-        // 와이어프레임
-        const wm = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({ color: b.wire, wireframe: true, transparent: true, opacity: b.type === 'main' ? 0.10 : 0.055 }))
-        wm.position.copy(mesh.position); city.add(wm)
-
-        // 층 구분선
-        addFloorLines(b, b.wire)
-
-        // 창문 불빛
-        addWindowStrips(b)
-
-        // Base slab
-        slab(b.w, b.d, b.x, b.z, b.accent)
-
-        // Roof (main + pinned)
-        if (b.type !== 'other') {
-          const roof = new THREE.Mesh(
-            new THREE.BoxGeometry(b.w * 0.55, 0.07, b.d * 0.55),
-            new THREE.MeshBasicMaterial({ color: b.wire, transparent: true, opacity: 0.8 })
-          )
-          roof.position.set(b.x, b.h + 0.04, b.z); city.add(roof)
-        }
+      )
+      body.castShadow = true
+      body.position.set(tower.x, tower.h / 2, tower.z)
+      body.userData = {
+        tower,
+        material: body.material,
+        baseGlow: tower.kind === 'hero' ? 0.44 : 0.24,
       }
+      city.add(body)
+      clickables.push(body)
+
+      const outline = new THREE.Mesh(
+        new THREE.BoxGeometry(tower.w + 0.06, tower.h + 0.04, tower.d + 0.06),
+        new THREE.MeshBasicMaterial({
+          color: tower.wire,
+          wireframe: true,
+          transparent: true,
+          opacity: tower.kind === 'hero' ? 0.18 : 0.1,
+        })
+      )
+      outline.position.copy(body.position)
+      city.add(outline)
+
+      const pad = new THREE.Mesh(
+        new THREE.CylinderGeometry(Math.max(tower.w, tower.d) * 0.78, Math.max(tower.w, tower.d) * 0.92, 0.18, 8),
+        new THREE.MeshBasicMaterial({
+          color: tower.glow,
+          transparent: true,
+          opacity: 0.25,
+        })
+      )
+      pad.position.set(tower.x, 0.08, tower.z)
+      city.add(pad)
+
+      addWindowStrips(tower)
+      addBeacon(tower)
     })
 
-    // ── Data streams ──────────────────────────────────────────────────────────
-    interface Stream { mesh: THREE.Mesh; s: THREE.Vector3; e: THREE.Vector3; t: number; spd: number; dir: 1|-1 }
+    interface Stream {
+      mesh: THREE.Mesh
+      start: THREE.Vector3
+      end: THREE.Vector3
+      t: number
+      speed: number
+      direction: 1 | -1
+    }
+
     const streams: Stream[] = []
-    const bldMap = Object.fromEntries(BUILDINGS.map(b => [b.id, b]))
-    const sMat = new THREE.MeshBasicMaterial({ color: 0x55ddff, transparent: true, opacity: 0.75 })
-    const sGeo = new THREE.BoxGeometry(0.5, 0.04, 0.08)
-    STREAM_PAIRS.forEach(([aid, bid]) => {
-      const a = bldMap[aid], bv = bldMap[bid]
-      if (!a || !bv) return
-      for (let i = 0; i < 2; i++) {
-        const m = new THREE.Mesh(sGeo, sMat.clone())
-        const stream: Stream = {
-          mesh: m,
-          s: new THREE.Vector3(a.x,  0.08 + i * 0.1, a.z),
-          e: new THREE.Vector3(bv.x, 0.08 + i * 0.1, bv.z),
-          t: Math.random(), spd: 0.004 + Math.random() * 0.004, dir: 1,
-        }
-        streams.push(stream); city.add(m)
-      }
+    STREAMS.forEach(([from, to], index) => {
+      const source = towerMap[from]
+      const target = towerMap[to]
+      if (!source || !target) return
+
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.7, 0.06, 0.12),
+        new THREE.MeshBasicMaterial({ color: index % 2 === 0 ? 0x7bc8ff : 0xa78bff, transparent: true, opacity: 0.9 })
+      )
+      const start = new THREE.Vector3(source.x, 0.12, source.z)
+      const end = new THREE.Vector3(target.x, 0.12, target.z)
+      streams.push({
+        mesh,
+        start,
+        end,
+        t: Math.random(),
+        speed: 0.003 + Math.random() * 0.004,
+        direction: 1,
+      })
+      city.add(mesh)
     })
 
-    // ── Interaction state ─────────────────────────────────────────────────────
-    let selBld: BldData | null = null
-    let cameraZoom = 1.0
-    const camTarget  = CAM_BASE.clone()
-    const lookTarget = new THREE.Vector3(0, 2, 0)
+    const raycaster = new THREE.Raycaster()
+    let hovered: THREE.Mesh | null = null
+    let selectedTower: TowerData | null = null
+    let dragging = false
+    let previousX = 0
+    let previousY = 0
+    let velocityY = 0
+    let velocityX = 0
+    let targetRotationY = 0
+    let targetRotationX = 0.12
+    let zoom = 1
+    let touchMoved = false
 
-    let dragging = false, prevX = 0, prevY = 0
-    let velY = 0, velX = 0, tgtY = 0, tgtX = 0.0
-    let hovMesh: THREE.Mesh | null = null
-    const ray = new THREE.Raycaster()
+    function setHover(mesh: THREE.Mesh | null) {
+      if (hovered && hovered !== mesh) {
+        const material = hovered.userData.material as THREE.MeshStandardMaterial
+        material.emissiveIntensity = hovered.userData.baseGlow as number
+      }
+      hovered = mesh
+      if (hovered) {
+        const material = hovered.userData.material as THREE.MeshStandardMaterial
+        material.emissiveIntensity = 0.75
+      }
+      renderer.domElement.style.cursor = hovered ? 'pointer' : dragging ? 'grabbing' : 'grab'
+    }
 
-    function doSelect(bld: BldData) {
-      selBld = bld; setSelected(bld)
-      camTarget.set(bld.x * 0.5, bld.h * 0.4 + 2, bld.z + 13)
-      lookTarget.set(bld.x, bld.h * 0.4, bld.z)
+    function selectTower(tower: TowerData) {
+      selectedTower = tower
+      setSelected(tower)
+      camTarget.set(tower.x * 0.55, Math.max(5.5, tower.h * 0.42 + 1.8), tower.z + 11)
+      lookTarget.set(tower.x, tower.h * 0.34, tower.z)
       renderer.domElement.style.cursor = 'default'
     }
-    function doDeselect() {
-      if (hovMesh) { (hovMesh.userData.mat as THREE.MeshStandardMaterial).emissiveIntensity = hovMesh.userData.baseI; hovMesh = null }
-      selBld = null; setSelected(null)
-      camTarget.copy(CAM_BASE).multiplyScalar(cameraZoom)
-      lookTarget.set(0, 2, 0)
+
+    function clearSelection() {
+      selectedTower = null
+      setSelected(null)
+      camTarget.copy(baseCamera).multiplyScalar(zoom)
+      lookTarget.set(0, 3, 0)
       renderer.domElement.style.cursor = 'grab'
     }
-    deselectRef.current = doDeselect
 
-    function getNDC(cx: number, cy: number) {
-      const r = renderer.domElement.getBoundingClientRect()
-      return new THREE.Vector2(((cx-r.left)/r.width)*2-1, -((cy-r.top)/r.height)*2+1)
+    closeRef.current = clearSelection
+
+    function getPointer(clientX: number, clientY: number) {
+      const rect = renderer.domElement.getBoundingClientRect()
+      return new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
     }
 
-    const onDown  = (e: MouseEvent) => {
-      if (selBld) return
-      dragging = true; velY = velX = 0; prevX = e.clientX; prevY = e.clientY
+    const onMouseDown = (event: MouseEvent) => {
+      if (selectedTower) return
+      dragging = true
+      previousX = event.clientX
+      previousY = event.clientY
+      velocityX = 0
+      velocityY = 0
       renderer.domElement.style.cursor = 'grabbing'
     }
-    const onMove  = (e: MouseEvent) => {
-      if (!selBld) {
-        ray.setFromCamera(getNDC(e.clientX, e.clientY), camera)
-        const hits = ray.intersectObjects(clickables, false)
-        if (hovMesh) { (hovMesh.userData.mat as THREE.MeshStandardMaterial).emissiveIntensity = hovMesh.userData.baseI; hovMesh = null }
-        if (hits.length) {
-          hovMesh = hits[0].object as THREE.Mesh
-          ;(hovMesh.userData.mat as THREE.MeshStandardMaterial).emissiveIntensity = 0.65
-          renderer.domElement.style.cursor = dragging ? 'grabbing' : 'pointer'
-        } else if (!dragging) renderer.domElement.style.cursor = 'grab'
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (!selectedTower) {
+        raycaster.setFromCamera(getPointer(event.clientX, event.clientY), camera)
+        const hits = raycaster.intersectObjects(clickables, false)
+        setHover(hits.length ? (hits[0].object as THREE.Mesh) : null)
       }
-      if (!dragging || selBld) return
-      const dx = (e.clientX - prevX) * 0.006   // 감도 줄임
-      const dy = (e.clientY - prevY) * 0.006
-      velY = dx; velX = dy; tgtY += dx; tgtX += dy
-      prevX = e.clientX; prevY = e.clientY
+
+      if (!dragging || selectedTower) return
+      const deltaX = (event.clientX - previousX) * 0.006
+      const deltaY = (event.clientY - previousY) * 0.005
+      velocityY = deltaX
+      velocityX = deltaY
+      targetRotationY += deltaX
+      targetRotationX += deltaY
+      previousX = event.clientX
+      previousY = event.clientY
     }
-    const onUp    = () => { dragging = false; renderer.domElement.style.cursor = 'grab' }
-    const onClick = (e: MouseEvent) => {
-      if (selBld || Math.abs(velY) > 0.01) return
-      ray.setFromCamera(getNDC(e.clientX, e.clientY), camera)
-      const hits = ray.intersectObjects(clickables, false)
-      if (hits.length) { const b = hits[0].object.userData.bldData as BldData; if (b) doSelect(b) }
+
+    const onMouseUp = () => {
+      dragging = false
+      renderer.domElement.style.cursor = hovered ? 'pointer' : selectedTower ? 'default' : 'grab'
     }
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      cameraZoom = Math.max(0.3, Math.min(3.2, cameraZoom * (e.deltaY > 0 ? 1.1 : 0.91)))
-      if (!selBld) camTarget.copy(CAM_BASE).multiplyScalar(cameraZoom)
+
+    const onClick = (event: MouseEvent) => {
+      if (selectedTower || Math.abs(velocityY) > 0.012) return
+      raycaster.setFromCamera(getPointer(event.clientX, event.clientY), camera)
+      const hits = raycaster.intersectObjects(clickables, false)
+      if (!hits.length) return
+      const tower = hits[0].object.userData.tower as TowerData
+      selectTower(tower)
     }
+
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault()
+      zoom = Math.max(0.48, Math.min(2.2, zoom * (event.deltaY > 0 ? 1.08 : 0.92)))
+      if (!selectedTower) {
+        camTarget.copy(baseCamera).multiplyScalar(zoom)
+      }
+    }
+
+    let lastPinch = 0
+
     const onResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight
       camera.updateProjectionMatrix()
       renderer.setSize(window.innerWidth, window.innerHeight)
+      composer.setSize(window.innerWidth, window.innerHeight)
     }
 
-    let lastPinch = 0
-    const onTStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) { dragging=true; velY=velX=0; prevX=e.touches[0].clientX; prevY=e.touches[0].clientY }
-      if (e.touches.length === 2) lastPinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY)
-    }
-    const onTMove = (e: TouchEvent) => {
-      e.preventDefault()
-      if (e.touches.length===1 && dragging) {
-        const dx=(e.touches[0].clientX-prevX)*0.006, dy=(e.touches[0].clientY-prevY)*0.006
-        velY=dx; velX=dy; tgtY+=dx; tgtX+=dy; prevX=e.touches[0].clientX; prevY=e.touches[0].clientY
+    const onTouchStart = (event: TouchEvent) => {
+      if (selectedTower) return
+      if (event.touches.length === 1) {
+        dragging = true
+        touchMoved = false
+        previousX = event.touches[0].clientX
+        previousY = event.touches[0].clientY
+        velocityX = 0
+        velocityY = 0
       }
-      if (e.touches.length===2) {
-        const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY)
-        if (lastPinch > 0) { cameraZoom=Math.max(0.3,Math.min(3.2,cameraZoom*lastPinch/d)); if(!selBld)camTarget.copy(CAM_BASE).multiplyScalar(cameraZoom) }
-        lastPinch = d
+      if (event.touches.length === 2) {
+        lastPinch = Math.hypot(
+          event.touches[0].clientX - event.touches[1].clientX,
+          event.touches[0].clientY - event.touches[1].clientY
+        )
       }
     }
-    const onTEnd = () => { dragging=false; lastPinch=0 }
+
+    const onTouchMove = (event: TouchEvent) => {
+      event.preventDefault()
+      if (selectedTower) return
+
+      if (event.touches.length === 1 && dragging) {
+        const deltaX = (event.touches[0].clientX - previousX) * 0.006
+        const deltaY = (event.touches[0].clientY - previousY) * 0.005
+        if (Math.abs(deltaX) > 0.002 || Math.abs(deltaY) > 0.002) touchMoved = true
+        velocityY = deltaX
+        velocityX = deltaY
+        targetRotationY += deltaX
+        targetRotationX += deltaY
+        previousX = event.touches[0].clientX
+        previousY = event.touches[0].clientY
+      }
+
+      if (event.touches.length === 2) {
+        const pinch = Math.hypot(
+          event.touches[0].clientX - event.touches[1].clientX,
+          event.touches[0].clientY - event.touches[1].clientY
+        )
+        if (lastPinch > 0) {
+          zoom = Math.max(0.48, Math.min(2.2, zoom * (lastPinch / pinch)))
+          camTarget.copy(baseCamera).multiplyScalar(zoom)
+        }
+        lastPinch = pinch
+      }
+    }
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length === 0) {
+        dragging = false
+        lastPinch = 0
+      }
+      if (event.touches.length === 1) {
+        previousX = event.touches[0].clientX
+        previousY = event.touches[0].clientY
+      }
+    }
+
+    const onTouchTap = (event: TouchEvent) => {
+      if (selectedTower || event.changedTouches.length !== 1 || touchMoved) return
+      raycaster.setFromCamera(
+        getPointer(event.changedTouches[0].clientX, event.changedTouches[0].clientY),
+        camera
+      )
+      const hits = raycaster.intersectObjects(clickables, false)
+      if (!hits.length) return
+      const tower = hits[0].object.userData.tower as TowerData
+      selectTower(tower)
+    }
 
     renderer.domElement.style.cursor = 'grab'
-    renderer.domElement.addEventListener('mousedown',  onDown)
-    renderer.domElement.addEventListener('mousemove',  onMove)
-    renderer.domElement.addEventListener('mouseup',    onUp)
-    renderer.domElement.addEventListener('click',      onClick)
-    renderer.domElement.addEventListener('wheel',      onWheel, { passive: false })
-    renderer.domElement.addEventListener('touchstart', onTStart, { passive: false })
-    renderer.domElement.addEventListener('touchmove',  onTMove,  { passive: false })
-    renderer.domElement.addEventListener('touchend',   onTEnd)
+    renderer.domElement.addEventListener('mousedown', onMouseDown)
+    renderer.domElement.addEventListener('mousemove', onMouseMove)
+    renderer.domElement.addEventListener('mouseup', onMouseUp)
+    renderer.domElement.addEventListener('mouseleave', onMouseUp)
+    renderer.domElement.addEventListener('click', onClick)
+    renderer.domElement.addEventListener('wheel', onWheel, { passive: false })
+    renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false })
+    renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false })
+    renderer.domElement.addEventListener('touchend', onTouchEnd)
+    renderer.domElement.addEventListener('touchend', onTouchTap)
     window.addEventListener('resize', onResize)
 
-    // ── Animation loop ─────────────────────────────────────────────────────────
-    let raf: number, t = 0
+    let frame = 0
     const animate = () => {
-      raf = requestAnimationFrame(animate)
-      t += 0.001
+      frame = requestAnimationFrame(animate)
 
-      if (selBld) {
-        city.rotation.y *= 0.9; city.rotation.x *= 0.9
+      if (selectedTower) {
+        city.rotation.y *= 0.92
+        city.rotation.x *= 0.92
       } else {
-        if (!dragging) { velY *= 0.94; velX *= 0.94; tgtY += velY; tgtX += velX }
-        // 수직 회전 클램핑 (-0.25 ~ 0.60) — 너무 뒤집히지 않도록
-        tgtX = Math.max(-0.25, Math.min(0.60, tgtX))
-        city.rotation.y += (tgtY - city.rotation.y) * 0.1
-        city.rotation.x += (tgtX - city.rotation.x) * 0.1
+        if (!dragging) {
+          velocityY *= 0.94
+          velocityX *= 0.93
+          targetRotationY += velocityY
+          targetRotationX += velocityX
+        }
+        targetRotationX = Math.max(-0.18, Math.min(0.52, targetRotationX))
+        city.rotation.y += (targetRotationY - city.rotation.y) * 0.085
+        city.rotation.x += (targetRotationX - city.rotation.x) * 0.085
       }
 
-      camera.position.lerp(camTarget, 0.055)
-      lookCur.lerp(lookTarget, 0.055)
-      camera.lookAt(lookCur)
+      ring.rotation.z += 0.002
 
-      // 구름 드리프트
-      cloudGroup.children.forEach(child => {
-        const u = (child as THREE.Sprite).userData
-        if (!u.dx) return
-        child.position.x += u.dx; child.position.z += u.dz
-        child.position.y += Math.sin(t * 600 * u.fSpd + u.fOff) * 0.0003
-        if (child.position.x >  13) child.position.x = -13
-        if (child.position.x < -13) child.position.x =  13
-        if (child.position.z >  13) child.position.z = -13
-        if (child.position.z < -13) child.position.z =  13
+      animatedHalos.forEach((halo, index) => {
+        halo.rotation.z += (halo.userData.spin as number) + index * 0.0002
+        halo.position.y += Math.sin(performance.now() * 0.0012 + index) * 0.002
       })
 
-      // 데이터 스트림
-      streams.forEach(s => {
-        s.t += s.spd * s.dir
-        if (s.t >= 1) { s.t = 1; s.dir = -1 }
-        if (s.t <= 0) { s.t = 0; s.dir =  1 }
-        s.mesh.position.lerpVectors(s.s, s.e, s.t)
-        const d = s.e.clone().sub(s.s)
-        s.mesh.rotation.y = Math.atan2(d.x, d.z)
+      streams.forEach((stream) => {
+        stream.t += stream.speed * stream.direction
+        if (stream.t >= 1) {
+          stream.t = 1
+          stream.direction = -1
+        }
+        if (stream.t <= 0) {
+          stream.t = 0
+          stream.direction = 1
+        }
+        stream.mesh.position.lerpVectors(stream.start, stream.end, stream.t)
+        const direction = stream.end.clone().sub(stream.start)
+        stream.mesh.rotation.y = Math.atan2(direction.x, direction.z)
       })
 
-      renderer.render(scene, camera)
+      camera.position.lerp(camTarget, 0.06)
+      lookCurrent.lerp(lookTarget, 0.06)
+      camera.lookAt(lookCurrent)
+
+      composer.render()
     }
+
     animate()
 
     return () => {
-      renderer.domElement.removeEventListener('mousedown',  onDown)
-      renderer.domElement.removeEventListener('mousemove',  onMove)
-      renderer.domElement.removeEventListener('mouseup',    onUp)
-      renderer.domElement.removeEventListener('click',      onClick)
-      renderer.domElement.removeEventListener('wheel',      onWheel)
-      renderer.domElement.removeEventListener('touchstart', onTStart)
-      renderer.domElement.removeEventListener('touchmove',  onTMove)
-      renderer.domElement.removeEventListener('touchend',   onTEnd)
+      renderer.domElement.removeEventListener('mousedown', onMouseDown)
+      renderer.domElement.removeEventListener('mousemove', onMouseMove)
+      renderer.domElement.removeEventListener('mouseup', onMouseUp)
+      renderer.domElement.removeEventListener('mouseleave', onMouseUp)
+      renderer.domElement.removeEventListener('click', onClick)
+      renderer.domElement.removeEventListener('wheel', onWheel)
+      renderer.domElement.removeEventListener('touchstart', onTouchStart)
+      renderer.domElement.removeEventListener('touchmove', onTouchMove)
+      renderer.domElement.removeEventListener('touchend', onTouchEnd)
+      renderer.domElement.removeEventListener('touchend', onTouchTap)
       window.removeEventListener('resize', onResize)
-      cancelAnimationFrame(raf)
-      cloudGroupRef.current = null; cloudTexRef.current = null; cityRef.current = null
+      cancelAnimationFrame(frame)
+      composer.dispose()
       renderer.dispose()
-      if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement)
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement)
     }
   }, [])
 
   return (
     <>
-      <div ref={mountRef} style={{ position:'fixed', inset:0, zIndex:0 }} />
-      <HUD />
-      {selected && <Panel bld={selected} onClose={() => deselectRef.current?.()} />}
+      <div ref={mountRef} style={{ position: 'fixed', inset: 0, zIndex: 0 }} />
+      <Overlay />
+      {selected && <Panel tower={selected} onClose={() => closeRef.current?.()} />}
     </>
   )
 }
