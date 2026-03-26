@@ -16,76 +16,61 @@ function useFadeIn(delay = 0) {
   return { ref, visible }
 }
 
-const SKILL_GROUPS = [
+const GROUPS = [
   {
-    title: 'Cloud & DevOps',
-    icon: '☁️',
-    color: '#4a90ff',
+    icon: '☁️', title: 'Cloud & DevOps', color: '#4a90ff',
     items: [
       { name: 'AWS (EC2, S3, RDS, IAM)', level: 72 },
-      { name: 'Docker & Container', level: 80 },
-      { name: 'Linux / Shell', level: 75 },
-      { name: 'CI/CD (GitHub Actions)', level: 68 },
+      { name: 'Docker',                  level: 80 },
+      { name: 'Linux / Shell',           level: 75 },
+      { name: 'GitHub Actions CI/CD',    level: 68 },
     ],
   },
   {
-    title: 'Backend',
-    icon: '⚙️',
-    color: '#a855f7',
+    icon: '⚙️', title: 'Backend', color: '#a060ff',
     items: [
       { name: 'Python / FastAPI', level: 85 },
       { name: 'Node.js / Express', level: 72 },
-      { name: 'Java / Spring', level: 65 },
-      { name: 'REST API Design', level: 80 },
+      { name: 'Java / Spring',    level: 65 },
+      { name: 'REST API Design',  level: 80 },
     ],
   },
   {
-    title: 'Database',
-    icon: '🗄️',
-    color: '#22d3ee',
+    icon: '🗄️', title: 'Database', color: '#22d3ee',
     items: [
-      { name: 'PostgreSQL', level: 78 },
-      { name: 'Redis', level: 72 },
-      { name: 'MySQL', level: 70 },
-      { name: 'TimescaleDB / pgvector', level: 60 },
+      { name: 'PostgreSQL',          level: 78 },
+      { name: 'Redis',               level: 72 },
+      { name: 'MySQL',               level: 70 },
+      { name: 'TimescaleDB/pgvector',level: 60 },
     ],
   },
   {
-    title: 'AI / ML Integration',
-    icon: '🤖',
-    color: '#f97316',
+    icon: '🤖', title: 'AI / LLM', color: '#f060c8',
     items: [
-      { name: 'OpenAI API / LLM', level: 70 },
-      { name: 'LangGraph', level: 62 },
-      { name: 'ML Model Inference', level: 58 },
-      { name: 'Semantic Search', level: 65 },
+      { name: 'OpenAI API / Function Calling', level: 70 },
+      { name: 'LangGraph',                     level: 62 },
+      { name: 'Local ML Inference',            level: 58 },
+      { name: 'Semantic Search (pgvector)',     level: 65 },
     ],
   },
 ]
 
-function SkillBar({ name, level, color, visible }: { name: string; level: number; color: string; visible: boolean }) {
+function Bar({ name, level, color, visible }: { name: string; level: number; color: string; visible: boolean }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '0.85rem', color: 'rgba(190,210,255,0.85)', fontWeight: 500 }}>{name}</span>
-        <span style={{ fontSize: '0.72rem', color: color, fontWeight: 600 }}>{level}%</span>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span style={{ fontSize: '0.82rem', color: 'rgba(185,210,255,0.8)', fontWeight: 500 }}>{name}</span>
+        <span style={{ fontSize: '0.68rem', color, fontWeight: 600 }}>{level}%</span>
       </div>
-      <div
-        style={{
-          height: 4,
-          borderRadius: 4,
-          background: 'rgba(40,70,140,0.4)',
-          overflow: 'hidden',
-        }}
-      >
+      <div style={{ height: 3, borderRadius: 3, background: 'rgba(40,70,140,0.35)', overflow: 'hidden' }}>
         <div
           style={{
             height: '100%',
-            borderRadius: 4,
-            background: `linear-gradient(90deg, ${color}88, ${color})`,
+            borderRadius: 3,
+            background: `linear-gradient(90deg, ${color}70, ${color})`,
             width: visible ? `${level}%` : '0%',
-            transition: 'width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            boxShadow: `0 0 8px ${color}66`,
+            transition: 'width 1.3s cubic-bezier(.25,.46,.45,.94)',
+            boxShadow: `0 0 6px ${color}50`,
           }}
         />
       </div>
@@ -93,41 +78,32 @@ function SkillBar({ name, level, color, visible }: { name: string; level: number
   )
 }
 
-function SkillCard({ group, index }: { group: typeof SKILL_GROUPS[0]; index: number }) {
-  const { ref, visible } = useFadeIn(index * 120)
-
+function Card({ g, i }: { g: typeof GROUPS[0]; i: number }) {
+  const { ref, visible } = useFadeIn(i * 100)
   return (
     <div
       ref={ref}
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(50px)',
+        transform: visible ? 'translateY(0)' : 'translateY(40px)',
         transition: 'opacity 0.8s ease, transform 0.8s ease',
+        background: 'rgba(6,14,38,0.65)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        border: `1px solid ${g.color}20`,
+        borderRadius: 14,
+        padding: '28px 30px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 18,
       }}
     >
-      <div
-        style={{
-          background: 'rgba(8,18,45,0.6)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          border: `1px solid ${group.color}25`,
-          borderRadius: 16,
-          padding: '28px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 20,
-          boxShadow: `0 4px 30px rgba(0,0,0,0.3), inset 0 1px 0 ${group.color}18`,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: '1.4rem' }}>{group.icon}</span>
-          <h3 style={{ fontWeight: 600, fontSize: '1rem', color: group.color }}>{group.title}</h3>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {group.items.map((item) => (
-            <SkillBar key={item.name} name={item.name} level={item.level} color={group.color} visible={visible} />
-          ))}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: '1.25rem' }}>{g.icon}</span>
+        <span style={{ fontSize: '0.88rem', fontWeight: 600, color: g.color }}>{g.title}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {g.items.map((it) => <Bar key={it.name} name={it.name} level={it.level} color={g.color} visible={visible} />)}
       </div>
     </div>
   )
@@ -136,7 +112,6 @@ function SkillCard({ group, index }: { group: typeof SKILL_GROUPS[0]; index: num
 export default function Skills() {
   const headRef = useRef<HTMLDivElement>(null)
   const [headVisible, setHeadVisible] = useState(false)
-
   useEffect(() => {
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setHeadVisible(true) }, { threshold: 0.2 })
     if (headRef.current) obs.observe(headRef.current)
@@ -146,48 +121,34 @@ export default function Skills() {
   return (
     <section
       id="skills"
-      style={{ padding: '120px 24px', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      style={{ padding: '140px 56px', minHeight: '100vh' }}
     >
       <div
         ref={headRef}
         style={{
-          maxWidth: 900,
-          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          marginBottom: 80,
           opacity: headVisible ? 1 : 0,
-          transform: headVisible ? 'translateY(0)' : 'translateY(30px)',
+          transform: headVisible ? 'translateY(0)' : 'translateY(20px)',
           transition: 'opacity 0.8s ease, transform 0.8s ease',
-          marginBottom: 56,
         }}
       >
-        <p style={{ fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#5080c0', marginBottom: 12 }}>
-          Capabilities
-        </p>
-        <h2
-          style={{
-            fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #c0d8ff, #7090e8)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          Skills & Expertise
-        </h2>
+        <span style={{ fontSize: '0.65rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a5898' }}>03</span>
+        <div style={{ width: 60, height: 1, background: 'rgba(60,90,160,0.25)' }} />
+        <span style={{ fontSize: '0.65rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a5898' }}>Skills</span>
       </div>
 
       <div
         style={{
-          maxWidth: 900,
-          width: '100%',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 24,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))',
+          gap: 22,
+          maxWidth: 1100,
         }}
       >
-        {SKILL_GROUPS.map((g, i) => (
-          <SkillCard key={g.title} group={g} index={i} />
-        ))}
+        {GROUPS.map((g, i) => <Card key={g.title} g={g} i={i} />)}
       </div>
     </section>
   )

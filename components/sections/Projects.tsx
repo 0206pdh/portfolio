@@ -8,7 +8,7 @@ function useFadeIn(delay = 0) {
   useEffect(() => {
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) setTimeout(() => setVisible(true), delay) },
-      { threshold: 0.1 }
+      { threshold: 0.08 }
     )
     if (ref.current) obs.observe(ref.current)
     return () => obs.disconnect()
@@ -18,197 +18,187 @@ function useFadeIn(delay = 0) {
 
 const PROJECTS = [
   {
+    num: '01',
     name: 'Financial Event-Driven\nMarket Impact System',
-    short: 'fin_spring',
+    slug: 'fin_spring',
     href: 'https://github.com/0206pdh/fin_spring',
-    description:
-      '실시간 금융 뉴스를 분석해 FX 방향성 편향과 섹터별 시장 압력을 분류하는 인텔리전스 파이프라인. 가격 예측이 아닌 이벤트 분류와 설명 가능한 시장 영향 점수를 실시간 대시보드로 제공.',
-    highlights: [
-      'Redis 캐싱으로 히트맵 쿼리 2,340ms → 8ms (-99.7%)',
-      'TimescaleDB로 시계열 쿼리 93% 단축',
-      'pgvector 코사인 유사도로 의미론적 중복 감지 (임계값 0.92)',
-      'LangGraph 3단계 체인: 이벤트 분류 → FX 채널 식별 → 키워드 생성',
+    desc: '실시간 금융 뉴스 → FX 방향성 편향 & 섹터 압력 분류 파이프라인. 가격 예측이 아닌 설명 가능한 시장 영향 점수 제공.',
+    metrics: [
+      { val: '−99.7%', label: 'Redis 캐싱 후 쿼리 시간' },
+      { val: '−93%',   label: 'TimescaleDB 시계열 성능' },
+      { val: '0%',     label: 'JSON 파싱 실패율' },
     ],
-    tags: ['Python', 'FastAPI', 'PostgreSQL', 'TimescaleDB', 'pgvector', 'Redis', 'LangGraph', 'GPT-4o-mini', 'Docker'],
-    color: '#4a7cff',
-    glow: 'rgba(74,124,255,0.2)',
+    tags: ['FastAPI', 'TimescaleDB', 'pgvector', 'Redis', 'LangGraph', 'GPT-4o-mini', 'Docker'],
+    accent: '#4a7cff',
+    align: 'left' as const,
   },
   {
+    num: '02',
     name: 'YouTube Live\nComment Filter',
-    short: 'youtube_live_comment_filter',
+    slug: 'youtube_live_comment_filter',
     href: 'https://github.com/0206pdh/youtube_live_comment_filter',
-    description:
-      'YouTube 라이브 채팅의 유해 댓글을 실시간으로 감지하는 Chrome 확장 프로그램. 로컬 ML 모델과 FastAPI 백엔드를 결합해 프라이버시를 보장하면서 악성 댓글을 필터링.',
-    highlights: [
-      'Chrome Extension + FastAPI 백엔드 아키텍처',
-      '로컬 ML 모델로 프라이버시 보장 (외부 API 불필요)',
-      'Docker 컨테이너화 및 Windows EXE 옵션 지원',
-      'AWS ECS Fargate + ECR + CloudWatch 마이그레이션 로드맵',
+    desc: 'YouTube 라이브 채팅 유해 댓글 실시간 감지. 로컬 ML 모델로 프라이버시 보장하며 Chrome Extension + FastAPI 아키텍처.',
+    metrics: [
+      { val: 'Local',  label: 'ML — 외부 API 불필요' },
+      { val: 'Docker', label: '컨테이너화 배포' },
+      { val: 'AWS',    label: 'ECS Fargate 마이그레이션 예정' },
     ],
-    tags: ['Python', 'FastAPI', 'JavaScript', 'Chrome Extension', 'Docker', 'ML', 'AWS'],
-    color: '#a855f7',
-    glow: 'rgba(168,85,247,0.2)',
+    tags: ['Chrome Extension', 'FastAPI', 'Python', 'Docker', 'ML', 'AWS'],
+    accent: '#a855f7',
+    align: 'right' as const,
   },
   {
+    num: '03',
     name: 'AlgoNotion\nExtension',
-    short: 'AlgoNotion_Extention',
+    slug: 'AlgoNotion_Extention',
     href: 'https://github.com/0206pdh/AlgoNotion_Extention',
-    description:
-      '백준 온라인 저지에서 정답 처리된 알고리즘 코드를 자동으로 캡처해 Notion 데이터베이스에 저장하는 Chrome 확장 프로그램. solved.ac API로 문제 정보를 풍부화.',
-    highlights: [
-      'Chrome Manifest V3 기반 확장 프로그램',
-      'solved.ac API 연동으로 문제 난이도 자동 태깅',
-      'Notion Integration API로 DB 자동 동기화',
-      '백준 상태 페이지 실시간 모니터링',
+    desc: '백준 정답 코드를 자동으로 캡처해 Notion DB에 동기화. solved.ac API로 문제 난이도까지 자동 태깅.',
+    metrics: [
+      { val: 'V3',      label: 'Chrome Manifest' },
+      { val: 'Auto',    label: '제출 자동 감지' },
+      { val: 'Notion',  label: 'DB 자동 동기화' },
     ],
-    tags: ['JavaScript', 'Chrome Extension', 'Notion API', 'solved.ac API', 'Manifest V3'],
-    color: '#22d3ee',
-    glow: 'rgba(34,211,238,0.2)',
+    tags: ['JavaScript', 'Chrome Extension', 'Notion API', 'solved.ac API'],
+    accent: '#22d3ee',
+    align: 'left' as const,
   },
 ]
 
-function ProjectCard({ project, index }: { project: typeof PROJECTS[0]; index: number }) {
-  const { ref, visible } = useFadeIn(index * 150)
+function ProjectCard({ p }: { p: typeof PROJECTS[0] }) {
+  const { ref, visible } = useFadeIn(0)
   const [hovered, setHovered] = useState(false)
+
+  const isRight = p.align === 'right'
 
   return (
     <div
       ref={ref}
       style={{
+        display: 'flex',
+        justifyContent: isRight ? 'flex-end' : 'flex-start',
+        paddingLeft: isRight ? 0 : 0,
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(60px)',
-        transition: `opacity 0.8s ease, transform 0.8s ease`,
+        transform: visible
+          ? 'translateX(0)'
+          : `translateX(${isRight ? '40px' : '-40px'})`,
+        transition: 'opacity 0.9s ease, transform 0.9s ease',
       }}
     >
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          background: 'rgba(8,18,45,0.6)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          border: `1px solid ${hovered ? project.color + '55' : 'rgba(80,130,220,0.18)'}`,
+          maxWidth: 600,
+          width: '100%',
+          background: 'rgba(6,14,38,0.65)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: `1px solid ${hovered ? p.accent + '40' : 'rgba(60,100,180,0.18)'}`,
           borderRadius: 16,
-          padding: '32px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 20,
-          height: '100%',
+          padding: '36px 40px',
           transition: 'all 0.35s ease',
-          boxShadow: hovered
-            ? `0 8px 40px ${project.glow}, 0 0 0 1px ${project.color}22`
-            : '0 4px 20px rgba(0,0,0,0.3)',
-          transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+          boxShadow: hovered ? `0 12px 50px ${p.accent}18` : '0 4px 24px rgba(0,0,0,0.35)',
+          transform: hovered ? 'translateY(-3px)' : 'none',
           cursor: 'default',
         }}
       >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: `linear-gradient(135deg, ${project.color}33, ${project.color}11)`,
-              border: `1px solid ${project.color}44`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.3rem',
-            }}
-          >
-            {['📊', '🛡️', '📝'][PROJECTS.indexOf(project)]}
+        {/* Top row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <span
+              style={{
+                fontSize: '0.62rem',
+                letterSpacing: '0.18em',
+                color: p.accent,
+                opacity: 0.6,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+              }}
+            >
+              {p.num}
+            </span>
+            <div style={{ width: 24, height: 1, background: `${p.accent}40` }} />
           </div>
           <a
-            href={project.href}
+            href={p.href}
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              color: 'rgba(160,190,240,0.5)',
-              transition: 'color 0.2s',
               display: 'flex',
               alignItems: 'center',
-              gap: 4,
-              fontSize: '0.8rem',
+              gap: 5,
+              fontSize: '0.72rem',
+              color: 'rgba(140,180,240,0.4)',
               textDecoration: 'none',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              transition: 'color 0.2s',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = project.color)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(160,190,240,0.5)')}
+            onMouseEnter={(e) => { e.currentTarget.style.color = p.accent }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(140,180,240,0.4)' }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
             </svg>
-            View
+            View repo
           </a>
         </div>
 
         {/* Title */}
-        <div>
-          <h3
-            style={{
-              fontSize: '1.15rem',
-              fontWeight: 700,
-              lineHeight: 1.3,
-              color: '#d0e4ff',
-              marginBottom: 4,
-              whiteSpace: 'pre-line',
-            }}
-          >
-            {project.name}
-          </h3>
-          <span
-            style={{
-              fontSize: '0.72rem',
-              color: project.color,
-              fontFamily: 'monospace',
-              opacity: 0.7,
-            }}
-          >
-            {project.short}
-          </span>
-        </div>
+        <h3
+          style={{
+            fontSize: 'clamp(1.1rem, 2.5vw, 1.55rem)',
+            fontWeight: 700,
+            lineHeight: 1.25,
+            whiteSpace: 'pre-line',
+            color: '#cce0ff',
+            letterSpacing: '-0.01em',
+            marginBottom: 16,
+          }}
+        >
+          {p.name}
+        </h3>
 
-        {/* Description */}
-        <p style={{ color: 'rgba(170,200,245,0.7)', fontSize: '0.87rem', lineHeight: 1.7 }}>
-          {project.description}
+        {/* Desc */}
+        <p style={{ fontSize: '0.87rem', color: 'rgba(155,190,245,0.65)', lineHeight: 1.75, marginBottom: 28 }}>
+          {p.desc}
         </p>
 
-        {/* Highlights */}
-        <ul style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {project.highlights.map((h) => (
-            <li
-              key={h}
-              style={{
-                display: 'flex',
-                gap: 10,
-                fontSize: '0.82rem',
-                color: 'rgba(150,185,240,0.7)',
-                lineHeight: 1.5,
-              }}
-            >
-              <span style={{ color: project.color, flexShrink: 0, marginTop: 1 }}>▸</span>
-              {h}
-            </li>
+        {/* Metrics */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 12,
+            marginBottom: 28,
+            paddingBottom: 28,
+            borderBottom: `1px solid rgba(60,100,180,0.15)`,
+          }}
+        >
+          {p.metrics.map((m) => (
+            <div key={m.label}>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: p.accent, marginBottom: 3 }}>{m.val}</div>
+              <div style={{ fontSize: '0.68rem', color: 'rgba(120,160,220,0.5)', lineHeight: 1.4 }}>{m.label}</div>
+            </div>
           ))}
-        </ul>
+        </div>
 
         {/* Tags */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 'auto', paddingTop: 8 }}>
-          {project.tags.map((tag) => (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {p.tags.map((t) => (
             <span
-              key={tag}
+              key={t}
               style={{
+                fontSize: '0.68rem',
                 padding: '3px 10px',
                 borderRadius: 20,
-                fontSize: '0.7rem',
+                background: `${p.accent}14`,
+                border: `1px solid ${p.accent}28`,
+                color: `${p.accent}cc`,
                 fontWeight: 500,
-                background: `${project.color}18`,
-                border: `1px solid ${project.color}35`,
-                color: project.color,
-                letterSpacing: '0.02em',
               }}
             >
-              {tag}
+              {t}
             </span>
           ))}
         </div>
@@ -220,7 +210,6 @@ function ProjectCard({ project, index }: { project: typeof PROJECTS[0]; index: n
 export default function Projects() {
   const headRef = useRef<HTMLDivElement>(null)
   const [headVisible, setHeadVisible] = useState(false)
-
   useEffect(() => {
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setHeadVisible(true) }, { threshold: 0.2 })
     if (headRef.current) obs.observe(headRef.current)
@@ -230,48 +219,29 @@ export default function Projects() {
   return (
     <section
       id="projects"
-      style={{ padding: '120px 24px', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      style={{ padding: '140px 56px', minHeight: '100vh' }}
     >
+      {/* Header */}
       <div
         ref={headRef}
         style={{
-          maxWidth: 900,
-          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          marginBottom: 80,
           opacity: headVisible ? 1 : 0,
-          transform: headVisible ? 'translateY(0)' : 'translateY(30px)',
+          transform: headVisible ? 'translateY(0)' : 'translateY(20px)',
           transition: 'opacity 0.8s ease, transform 0.8s ease',
-          marginBottom: 56,
         }}
       >
-        <p style={{ fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#5080c0', marginBottom: 12 }}>
-          Projects
-        </p>
-        <h2
-          style={{
-            fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #c0d8ff, #7090e8)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          What I&apos;ve Built
-        </h2>
+        <span style={{ fontSize: '0.65rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a5898' }}>02</span>
+        <div style={{ width: 60, height: 1, background: 'rgba(60,90,160,0.25)' }} />
+        <span style={{ fontSize: '0.65rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a5898' }}>Projects</span>
       </div>
 
-      <div
-        style={{
-          maxWidth: 900,
-          width: '100%',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: 24,
-        }}
-      >
-        {PROJECTS.map((p, i) => (
-          <ProjectCard key={p.short} project={p} index={i} />
-        ))}
+      {/* Project list — staggered left/right */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 48, maxWidth: 1100, margin: '0 auto' }}>
+        {PROJECTS.map((p) => <ProjectCard key={p.slug} p={p} />)}
       </div>
     </section>
   )
