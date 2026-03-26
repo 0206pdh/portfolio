@@ -14,7 +14,10 @@ export interface BldData {
 }
 interface ContribDay { date: string; count: number; level: number }
 
-// ─── Building data ────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+const BG_COLOR = 0x1c3050
+const FLOOR_H  = 1.3
+
 const BUILDINGS: BldData[] = [
   {
     id: 'main', name: '@0206pdh', subtitle: 'GitHub Profile · 23 Public Repos',
@@ -22,7 +25,8 @@ const BUILDINGS: BldData[] = [
     link: 'https://github.com/0206pdh',
     tags: ['AWS', 'Python', 'FastAPI', 'Docker', 'Node.js', 'Java', 'TypeScript'],
     stats: [{ label: 'Public Repos', value: '23' }, { label: 'Languages', value: '5+' }, { label: 'Domain', value: 'Cloud/Backend' }],
-    x: 0, z: 0, w: 2.8, d: 2.8, h: 14, type: 'main', base: 0x0e1e50, accent: 0x2255ff, wire: 0x5588ff,
+    x: 0, z: 0, w: 2.8, d: 2.8, h: 14,
+    type: 'main', base: 0x0e1e50, accent: 0x3366ff, wire: 0x6699ff,
   },
   {
     id: 'fin_spring', name: 'fin_spring', subtitle: 'Financial Event-Driven Market Impact System',
@@ -30,7 +34,8 @@ const BUILDINGS: BldData[] = [
     link: 'https://github.com/0206pdh/fin_spring',
     tags: ['Python', 'FastAPI', 'TimescaleDB', 'pgvector', 'Redis', 'LangGraph', 'GPT-4o-mini', 'Docker'],
     stats: [{ label: 'Query Speed', value: '−99.7%' }, { label: 'Time-series', value: '−93%' }, { label: 'Parse Errors', value: '0%' }],
-    x: 5, z: 0, w: 1.9, d: 1.9, h: 9, type: 'pinned', base: 0x0c1235, accent: 0x3850e0, wire: 0x6070ff,
+    x: 5, z: 0, w: 1.9, d: 1.9, h: 9,
+    type: 'pinned', base: 0x0c1840, accent: 0x2255cc, wire: 0x4477ee,
   },
   {
     id: 'yt_filter', name: 'YT Comment Filter', subtitle: 'YouTube Live Toxic Comment Filter',
@@ -38,7 +43,8 @@ const BUILDINGS: BldData[] = [
     link: 'https://github.com/0206pdh/youtube_live_comment_filter',
     tags: ['Python', 'FastAPI', 'JavaScript', 'Chrome Extension', 'Docker', 'ML', 'AWS ECS'],
     stats: [{ label: 'Inference', value: 'Local ML' }, { label: 'Deploy', value: 'Docker' }, { label: 'Roadmap', value: 'AWS ECS' }],
-    x: -5, z: 0, w: 1.7, d: 1.7, h: 7, type: 'pinned', base: 0x180d30, accent: 0x8028d0, wire: 0xb050f0,
+    x: -5, z: 0, w: 1.7, d: 1.7, h: 7,
+    type: 'pinned', base: 0x111440, accent: 0x4455dd, wire: 0x6677ff,
   },
   {
     id: 'algonotion', name: 'AlgoNotion', subtitle: 'Baekjoon → Notion Chrome Extension',
@@ -46,7 +52,8 @@ const BUILDINGS: BldData[] = [
     link: 'https://github.com/0206pdh/AlgoNotion_Extention',
     tags: ['JavaScript', 'Chrome Extension', 'Notion API', 'solved.ac API', 'Manifest V3'],
     stats: [{ label: 'Platform', value: 'Chrome MV3' }, { label: 'Sync', value: 'Auto' }, { label: 'APIs', value: 'Notion + solved.ac' }],
-    x: 0.5, z: 5, w: 1.5, d: 1.5, h: 5, type: 'pinned', base: 0x061820, accent: 0x00a0b8, wire: 0x30d8f0,
+    x: 0.5, z: 5, w: 1.5, d: 1.5, h: 5,
+    type: 'pinned', base: 0x0d1838, accent: 0x2255bb, wire: 0x4477dd,
   },
   {
     id: 'skills', name: 'Tech Stack', subtitle: 'Skills Tower — 5 Domains',
@@ -61,49 +68,71 @@ const BUILDINGS: BldData[] = [
       { floor: 'AI / LLM',      color: '#ee44cc', items: ['OpenAI API / Function Calling', 'LangGraph', 'Local ML Inference', 'pgvector Semantic Search'] },
       { floor: 'Languages',      color: '#44ee88', items: ['Python', 'Java', 'JavaScript', 'TypeScript', 'SQL'] },
     ],
-    x: -7, z: -2, w: 2.2, d: 2.2, h: 11, type: 'skills', base: 0x080e20, accent: 0x2040c0, wire: 0x4060e0,
+    x: -7, z: -2, w: 2.2, d: 2.2, h: 11,
+    type: 'skills', base: 0x080e20, accent: 0x2244cc, wire: 0x4466ee,
   },
-  { id: 'financial_ts', name: 'Market Impact TS', subtitle: 'Financial Event System v1 (TypeScript)',
+  { id: 'financial_ts', name: 'Market Impact TS', subtitle: 'Financial Event System v1',
     description: 'Earlier TypeScript-heavy version of the financial market impact system. Same FX/sector analysis concept, full-stack with OpenAI integration.',
-    link: 'https://github.com/0206pdh/Financial-Event-Driven-Market-Impact-System', tags: ['TypeScript', 'FastAPI', 'PostgreSQL', 'OpenAI'],
-    x: 8.5, z: -3.5, w: 1.4, d: 1.4, h: 7.5, type: 'other', base: 0x0a1028, accent: 0x2030a0, wire: 0x3040b0 },
+    link: 'https://github.com/0206pdh/Financial-Event-Driven-Market-Impact-System',
+    tags: ['TypeScript', 'FastAPI', 'PostgreSQL', 'OpenAI'],
+    x: 8.5, z: -3.5, w: 1.4, d: 1.4, h: 7.5,
+    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
   { id: 'algobot', name: 'AlgoBot', subtitle: 'Crypto Trading Bot with GUI',
-    description: 'Python crypto trading bot supporting live trading, backtesting, simulations, and strategy optimization. GUI + multi-exchange support.',
-    link: 'https://github.com/0206pdh/algobot', tags: ['Python', 'GUI', 'Crypto', 'Backtesting'],
-    x: -8.5, z: -3.5, w: 1.4, d: 1.4, h: 6, type: 'other', base: 0x0a1028, accent: 0x2030a0, wire: 0x3040b0 },
+    description: 'Python crypto trading bot supporting live trading, backtesting, simulations, and strategy optimization.',
+    link: 'https://github.com/0206pdh/algobot',
+    tags: ['Python', 'GUI', 'Crypto', 'Backtesting'],
+    x: -8.5, z: -3.5, w: 1.4, d: 1.4, h: 6,
+    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
   { id: 'road_construct', name: 'Road Construct', subtitle: 'Road Construction Alert System',
     description: 'Node.js + MongoDB backend marking road construction info on a map and alerting nearby users.',
-    link: 'https://github.com/0206pdh/Road_Construct', tags: ['Node.js', 'MongoDB', 'JavaScript'],
-    x: 6.5, z: -7, w: 1.2, d: 1.2, h: 4.5, type: 'other', base: 0x0a1028, accent: 0x2030a0, wire: 0x3040b0 },
+    link: 'https://github.com/0206pdh/Road_Construct',
+    tags: ['Node.js', 'MongoDB', 'JavaScript'],
+    x: 6.5, z: -7, w: 1.2, d: 1.2, h: 4.5,
+    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
   { id: 'coding_hub', name: 'Coding Test Hub', subtitle: 'Baekjoon Auto-Push Repository',
     description: 'Automated Baekjoon OJ solution archive powered by BaekjoonHub. Java-based competitive programming history.',
-    link: 'https://github.com/0206pdh/coding-test-hub', tags: ['Java', 'BaekjoonHub', 'Algorithms'],
-    x: -6.5, z: -7, w: 1.2, d: 1.2, h: 5, type: 'other', base: 0x0a1028, accent: 0x2030a0, wire: 0x3040b0 },
-  { id: 'toxicfree', name: 'ToxicFree', subtitle: 'Toxic Comment Filter Extension (v1)',
+    link: 'https://github.com/0206pdh/coding-test-hub',
+    tags: ['Java', 'BaekjoonHub', 'Algorithms'],
+    x: -6.5, z: -7, w: 1.2, d: 1.2, h: 5,
+    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
+  { id: 'toxicfree', name: 'ToxicFree', subtitle: 'Toxic Comment Filter (v1)',
     description: 'Early Chrome extension for filtering toxic YouTube comments. Predecessor to the YouTube Live Comment Filter.',
-    link: 'https://github.com/0206pdh/ToxicFree_Extension', tags: ['Chrome Extension', 'AI', 'JavaScript'],
-    x: 3.5, z: -8.5, w: 1.1, d: 1.1, h: 4, type: 'other', base: 0x0a1028, accent: 0x2030a0, wire: 0x3040b0 },
+    link: 'https://github.com/0206pdh/ToxicFree_Extension',
+    tags: ['Chrome Extension', 'AI', 'JavaScript'],
+    x: 3.5, z: -8.5, w: 1.1, d: 1.1, h: 4,
+    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
   { id: 'serverless', name: 'Serverless Tax', subtitle: 'Serverless Tax Calculator',
     description: 'JavaScript-based serverless tax calculation service.',
-    link: 'https://github.com/0206pdh/serverless-tax-calculate', tags: ['JavaScript', 'Serverless'],
-    x: -3.5, z: -8.5, w: 1.0, d: 1.0, h: 3, type: 'other', base: 0x0a1028, accent: 0x2030a0, wire: 0x3040b0 },
+    link: 'https://github.com/0206pdh/serverless-tax-calculate',
+    tags: ['JavaScript', 'Serverless'],
+    x: -3.5, z: -8.5, w: 1.0, d: 1.0, h: 3,
+    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
   { id: 'safe_way', name: 'SafeWay', subtitle: 'Safe Route Navigation App',
     description: 'JavaScript application for finding safe routes.',
-    link: 'https://github.com/0206pdh/safe_way', tags: ['JavaScript', 'Maps'],
-    x: 9.5, z: 2.5, w: 1.0, d: 1.0, h: 3, type: 'other', base: 0x0a1028, accent: 0x2030a0, wire: 0x3040b0 },
+    link: 'https://github.com/0206pdh/safe_way',
+    tags: ['JavaScript', 'Maps'],
+    x: 9.5, z: 2.5, w: 1.0, d: 1.0, h: 3,
+    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
   { id: 'db_project', name: 'DB Project', subtitle: 'Database Course Project',
     description: 'Java-based database management system developed as a course assignment.',
-    link: 'https://github.com/0206pdh/DataBase_project', tags: ['Java', 'Database', 'SQL'],
-    x: -9.5, z: 2.5, w: 1.0, d: 1.0, h: 2.5, type: 'other', base: 0x0a1028, accent: 0x2030a0, wire: 0x3040b0 },
+    link: 'https://github.com/0206pdh/DataBase_project',
+    tags: ['Java', 'Database', 'SQL'],
+    x: -9.5, z: 2.5, w: 1.0, d: 1.0, h: 2.5,
+    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
   { id: 'aws_library', name: 'AWS Library', subtitle: 'Cloud Library Management CLI',
     description: 'Python CLI-based library system with CSV data loading, book/member management, and checkout tracking.',
-    link: 'https://github.com/0206pdh/aws13th-library-system', tags: ['Python', 'AWS', 'CLI'],
-    x: 7, z: 6, w: 1.0, d: 1.0, h: 2, type: 'other', base: 0x0a1028, accent: 0x2030a0, wire: 0x3040b0 },
+    link: 'https://github.com/0206pdh/aws13th-library-system',
+    tags: ['Python', 'AWS', 'CLI'],
+    x: 7, z: 6, w: 1.0, d: 1.0, h: 2,
+    type: 'other', base: 0x0a1030, accent: 0x1a35a0, wire: 0x2845c0 },
 ]
 
-const SKILL_FLOORS = [
-  { color: 0x4488ff, h: 2.2 }, { color: 0x9944ee, h: 2.0 },
-  { color: 0x22ddee, h: 2.2 }, { color: 0xee44cc, h: 2.0 }, { color: 0x44ee88, h: 2.0 },
+const SKILL_FLOORS: { color: number; h: number; label: string; items: string[] }[] = [
+  { color: 0x5588ff, h: 2.2, label: 'Cloud & DevOps', items: ['AWS EC2/S3/RDS', 'Docker', 'Linux', 'GitHub Actions'] },
+  { color: 0x9944ee, h: 2.0, label: 'Backend',        items: ['FastAPI', 'Node.js', 'Spring', 'REST API'] },
+  { color: 0x22ccdd, h: 2.2, label: 'Database',       items: ['PostgreSQL', 'Redis', 'MySQL', 'TimescaleDB'] },
+  { color: 0xdd44bb, h: 2.0, label: 'AI / LLM',       items: ['OpenAI API', 'LangGraph', 'Local ML', 'pgvector'] },
+  { color: 0x44dd88, h: 2.0, label: 'Languages',      items: ['Python', 'Java', 'TypeScript', 'SQL'] },
 ]
 
 const STREAM_PAIRS = [
@@ -111,7 +140,7 @@ const STREAM_PAIRS = [
   ['main', 'skills'], ['fin_spring', 'financial_ts'], ['yt_filter', 'toxicfree'],
 ]
 
-// ─── Cloud texture ────────────────────────────────────────────────────────────
+// ─── Texture helpers ──────────────────────────────────────────────────────────
 function makeCloudTex(): THREE.CanvasTexture {
   const s = 256, c = document.createElement('canvas')
   c.width = s; c.height = s
@@ -121,8 +150,19 @@ function makeCloudTex(): THREE.CanvasTexture {
   g.addColorStop(0.35, 'rgba(195,215,255,0.72)')
   g.addColorStop(0.7,  'rgba(170,200,255,0.28)')
   g.addColorStop(1,    'rgba(0,0,0,0)')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, s, s)
+  ctx.fillStyle = g; ctx.fillRect(0, 0, s, s)
+  return new THREE.CanvasTexture(c)
+}
+
+function makeIconTex(text: string, color: string): THREE.CanvasTexture {
+  const w = 220, h = 46, c = document.createElement('canvas')
+  c.width = w; c.height = h
+  const ctx = c.getContext('2d')!
+  ctx.clearRect(0, 0, w, h)
+  ctx.fillStyle = color; ctx.globalAlpha = 0.92
+  ctx.font = 'bold 14px system-ui, -apple-system, sans-serif'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, 8, h / 2)
   return new THREE.CanvasTexture(c)
 }
 
@@ -220,61 +260,44 @@ function HUD() {
 
 // ─── Main scene ───────────────────────────────────────────────────────────────
 export default function CityScene() {
-  const mountRef    = useRef<HTMLDivElement>(null)
-  const deselectRef = useRef<(() => void) | null>(null)
-  // Refs for cross-effect Three.js access
+  const mountRef      = useRef<HTMLDivElement>(null)
+  const deselectRef   = useRef<(() => void) | null>(null)
   const cityRef       = useRef<THREE.Group | null>(null)
   const cloudGroupRef = useRef<THREE.Group | null>(null)
   const cloudTexRef   = useRef<THREE.CanvasTexture | null>(null)
 
-  const [selected,  setSelected]  = useState<BldData | null>(null)
-  const [contribs,  setContribs]  = useState<ContribDay[]>([])
+  const [selected, setSelected] = useState<BldData | null>(null)
+  const [contribs, setContribs] = useState<ContribDay[]>([])
 
-  // ── Fetch contributions independently ──────────────────────────────────────
+  // ── Fetch contributions ────────────────────────────────────────────────────
   useEffect(() => {
     fetch('https://github-contributions-api.jogruber.de/v4/0206pdh?y=last')
       .then(r => r.json())
       .then(d => setContribs((d.contributions as ContribDay[]).filter((c: ContribDay) => c.level > 0)))
-      .catch(() => {/* no clouds – silent fail */})
+      .catch(() => {})
   }, [])
 
   // ── Add contribution clouds when data arrives ──────────────────────────────
   useEffect(() => {
     if (contribs.length === 0 || !cityRef.current || !cloudGroupRef.current || !cloudTexRef.current) return
-    const group = cloudGroupRef.current
-    const tex   = cloudTexRef.current
-
-    // Clear previous sprites
+    const group = cloudGroupRef.current, tex = cloudTexRef.current
     while (group.children.length) group.remove(group.children[0])
-
     contribs.forEach(day => {
       const lvl = day.level
-      const n   = lvl === 1 ? 2 : lvl === 2 ? 3 : lvl === 3 ? 4 : 5
-      const bx  = (Math.random() - 0.5) * 22
-      const bz  = (Math.random() - 0.5) * 22
-      const by  = 7 + lvl * 1.8 + Math.random() * 3
-
+      const n = lvl === 1 ? 2 : lvl === 2 ? 3 : lvl === 3 ? 4 : 5
+      const bx = (Math.random() - 0.5) * 22, bz = (Math.random() - 0.5) * 22
+      const by = 7 + lvl * 1.8 + Math.random() * 3
       for (let k = 0; k < n; k++) {
-        const base  = 1.8 + lvl * 1.1
-        const scale = base * (0.6 + Math.random() * 0.8)
-        const mat   = new THREE.SpriteMaterial({
+        const base = 1.8 + lvl * 1.1, scale = base * (0.6 + Math.random() * 0.8)
+        const mat = new THREE.SpriteMaterial({
           map: tex, color: new THREE.Color(0xc0d8ff),
           transparent: true, opacity: 0.06 + lvl * 0.04 + Math.random() * 0.03,
           depthWrite: false,
         })
         const spr = new THREE.Sprite(mat)
-        spr.position.set(
-          bx + (Math.random() - 0.5) * base * 0.9,
-          by + (Math.random() - 0.5) * 0.7,
-          bz + (Math.random() - 0.5) * base * 0.9,
-        )
+        spr.position.set(bx+(Math.random()-0.5)*base*0.9, by+(Math.random()-0.5)*0.7, bz+(Math.random()-0.5)*base*0.9)
         spr.scale.set(scale, scale * 0.42, 1)
-        spr.userData = {
-          dx: (Math.random() - 0.5) * 0.0025,
-          dz: (Math.random() - 0.5) * 0.0025,
-          fOff: Math.random() * Math.PI * 2,
-          fSpd: 0.0004 + Math.random() * 0.0005,
-        }
+        spr.userData = { dx:(Math.random()-0.5)*0.0025, dz:(Math.random()-0.5)*0.0025, fOff:Math.random()*Math.PI*2, fSpd:0.0004+Math.random()*0.0005 }
         group.add(spr)
       }
     })
@@ -287,37 +310,30 @@ export default function CityScene() {
 
     const W = window.innerWidth, H = window.innerHeight
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(W, H)
-    renderer.setClearColor(0x0d1f3c)
+    renderer.setClearColor(BG_COLOR)
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     el.appendChild(renderer.domElement)
 
-    // Scene
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x0d1f3c)
-    scene.fog = new THREE.Fog(0x0d1f3c, 24, 46)
+    scene.background = new THREE.Color(BG_COLOR)
+    scene.fog = new THREE.Fog(BG_COLOR, 30, 68)   // 멀리까지 보이도록
 
-    // Camera
     const camera = new THREE.PerspectiveCamera(22, W / H, 0.1, 200)
     camera.position.set(0, 8, 22)
-    const lookCur = new THREE.Vector3(0, 2, 0)
-    const CAM_BASE = new THREE.Vector3(0, 8, 22)
+    const lookCur    = new THREE.Vector3(0, 2, 0)
+    const CAM_BASE   = new THREE.Vector3(0, 8, 22)
 
-    // Lights
-    const ambient = new THREE.AmbientLight(0xffffff, 5)
-    scene.add(ambient)
-    const sun = new THREE.DirectionalLight(0xffffff, 2.5)
-    sun.position.set(10, 20, 10)
-    sun.castShadow = true
-    sun.shadow.mapSize.set(2048, 2048)
-    scene.add(sun)
-    const fillBlue = new THREE.DirectionalLight(0x6688ff, 1.5)
-    fillBlue.position.set(-8, 5, -5)
-    scene.add(fillBlue)
+    // 조명
+    scene.add(new THREE.AmbientLight(0xffffff, 5.5))
+    const sun = new THREE.DirectionalLight(0xeef2ff, 3.0)
+    sun.position.set(10, 20, 10); sun.castShadow = true
+    sun.shadow.mapSize.set(2048, 2048); scene.add(sun)
+    const fill = new THREE.DirectionalLight(0x7799ff, 2.0)
+    fill.position.set(-8, 5, -5); scene.add(fill)
 
     // City group
     const city = new THREE.Group()
@@ -327,103 +343,153 @@ export default function CityScene() {
     // Ground
     const gnd = new THREE.Mesh(
       new THREE.PlaneGeometry(80, 80),
-      new THREE.MeshStandardMaterial({ color: 0x0c1a30, roughness: 1 })
+      new THREE.MeshStandardMaterial({ color: 0x14253c, roughness: 1 })
     )
-    gnd.rotation.x = -Math.PI / 2
-    gnd.receiveShadow = true
-    city.add(gnd)
-
-    // Grid
-    city.add(new THREE.GridHelper(80, 160, 0x203878, 0x0e1c38))
+    gnd.rotation.x = -Math.PI / 2; gnd.receiveShadow = true; city.add(gnd)
+    city.add(new THREE.GridHelper(80, 160, 0x2a4878, 0x162844))
 
     // Stars
     const sp = new Float32Array(5000 * 3)
     for (let i = 0; i < 5000; i++) {
-      const r = 70 + Math.random() * 90
-      const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1)
-      sp[i*3] = r*Math.sin(ph)*Math.cos(th); sp[i*3+1] = r*Math.sin(ph)*Math.sin(th); sp[i*3+2] = r*Math.cos(ph)
+      const r = 70+Math.random()*90, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1)
+      sp[i*3]=r*Math.sin(ph)*Math.cos(th); sp[i*3+1]=r*Math.sin(ph)*Math.sin(th); sp[i*3+2]=r*Math.cos(ph)
     }
-    const starGeo = new THREE.BufferGeometry()
-    starGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3))
-    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xaabbee, size: 0.18, sizeAttenuation: true, transparent: true, opacity: 0.75 })))
+    const sg = new THREE.BufferGeometry()
+    sg.setAttribute('position', new THREE.BufferAttribute(sp, 3))
+    scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xaabbee, size: 0.18, sizeAttenuation: true, transparent: true, opacity: 0.6 })))
 
-    // Cloud group (inside city so it rotates with buildings)
+    // Cloud group
     const cloudGroup = new THREE.Group()
     city.add(cloudGroup)
     cloudGroupRef.current = cloudGroup
-    cloudTexRef.current = makeCloudTex()
+    cloudTexRef.current   = makeCloudTex()
 
-    // ── Building factory ──────────────────────────────────────────────────────
-    const clickables: THREE.Mesh[] = []
+    // ── 창문 불빛 띠 ─────────────────────────────────────────────────────────
+    function addWindowStrips(b: BldData) {
+      const numFloors = Math.max(1, Math.floor(b.h / FLOOR_H))
+      for (let f = 0; f < numFloors; f++) {
+        const y = f * FLOOR_H + FLOOR_H * 0.58
+        if (Math.random() < 0.1) continue
+        const hue = Math.random() < 0.65 ? 0.11 : Math.random() < 0.55 ? 0.62 : 0.08
+        const col = new THREE.Color().setHSL(hue, 0.8, 0.88)
+        const op  = 0.55 + Math.random() * 0.4
+
+        const mkMat = () => new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide })
+
+        // 앞/뒤면
+        const front = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.75, 0.10), mkMat())
+        front.position.set(b.x, y, b.z + b.d / 2 + 0.012); city.add(front)
+        const back  = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.75, 0.10), mkMat())
+        back.position.set(b.x, y, b.z - b.d / 2 - 0.012); back.rotation.y = Math.PI; city.add(back)
+        // 좌/우면
+        const right = new THREE.Mesh(new THREE.PlaneGeometry(b.d * 0.75, 0.10), mkMat())
+        right.position.set(b.x + b.w / 2 + 0.012, y, b.z); right.rotation.y = Math.PI / 2; city.add(right)
+        const left  = new THREE.Mesh(new THREE.PlaneGeometry(b.d * 0.75, 0.10), mkMat())
+        left.position.set(b.x - b.w / 2 - 0.012, y, b.z); left.rotation.y = -Math.PI / 2; city.add(left)
+      }
+    }
+
+    // ── 층 구분선 ────────────────────────────────────────────────────────────
+    function addFloorLines(b: BldData, accentCol: number) {
+      const numFloors = Math.floor(b.h / FLOOR_H)
+      for (let f = 1; f < numFloors; f++) {
+        const sep = new THREE.Mesh(
+          new THREE.BoxGeometry(b.w + 0.06, 0.032, b.d + 0.06),
+          new THREE.MeshBasicMaterial({ color: accentCol, transparent: true, opacity: 0.35 })
+        )
+        sep.position.set(b.x, f * FLOOR_H, b.z); city.add(sep)
+      }
+    }
 
     function slab(w: number, d: number, x: number, z: number, color: number) {
       const m = new THREE.Mesh(
         new THREE.BoxGeometry(w + 0.15, 0.07, d + 0.15),
         new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6 })
       )
-      m.position.set(x, 0.04, z)
-      city.add(m)
+      m.position.set(x, 0.04, z); city.add(m)
     }
+
+    const clickables: THREE.Mesh[] = []
 
     BUILDINGS.forEach(b => {
       if (b.type === 'skills') {
-        // Skills tower — stacked floors
+        // 스킬 타워 — 층별로 쌓기
         let yOff = 0
         SKILL_FLOORS.forEach(fl => {
           const geo = new THREE.BoxGeometry(b.w, fl.h - 0.08, b.d)
           const mat = new THREE.MeshStandardMaterial({
-            color: 0x0c1425, roughness: 0.18, metalness: 0.9,
-            emissive: new THREE.Color(fl.color), emissiveIntensity: 0.3,
+            color: 0x0c1528, roughness: 0.15, metalness: 0.9,
+            emissive: new THREE.Color(fl.color), emissiveIntensity: 0.32,
           })
           const mesh = new THREE.Mesh(geo, mat)
           mesh.position.set(b.x, yOff + fl.h / 2, b.z)
           mesh.castShadow = true
-          mesh.userData = { bldData: b, mat, baseI: 0.3 }
-          clickables.push(mesh)
-          city.add(mesh)
+          mesh.userData = { bldData: b, mat, baseI: 0.32 }
+          clickables.push(mesh); city.add(mesh)
 
-          // Wireframe
-          const wm = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({ color: fl.color, wireframe: true, transparent: true, opacity: 0.12 }))
-          wm.position.copy(mesh.position)
-          city.add(wm)
+          // 와이어프레임
+          const wm = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({ color: fl.color, wireframe: true, transparent: true, opacity: 0.09 }))
+          wm.position.copy(mesh.position); city.add(wm)
 
-          // Floor separator
+          // 층 구분 띠
           const sep = new THREE.Mesh(
-            new THREE.BoxGeometry(b.w + 0.08, 0.07, b.d + 0.08),
-            new THREE.MeshBasicMaterial({ color: fl.color, transparent: true, opacity: 0.85 })
+            new THREE.BoxGeometry(b.w + 0.1, 0.055, b.d + 0.1),
+            new THREE.MeshBasicMaterial({ color: fl.color, transparent: true, opacity: 0.9 })
           )
-          sep.position.set(b.x, yOff + 0.04, b.z)
-          city.add(sep)
+          sep.position.set(b.x, yOff + 0.04, b.z); city.add(sep)
+
+          // 아이콘 — 층 바닥에 수평으로 눕혀서 배치
+          const colHex = '#' + fl.color.toString(16).padStart(6, '0')
+          fl.items.forEach((item, idx) => {
+            const tex = makeIconTex(item, colHex)
+            const plane = new THREE.Mesh(
+              new THREE.PlaneGeometry(1.05, 0.30),
+              new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false, opacity: 0.88 })
+            )
+            plane.rotation.x = -Math.PI / 2   // 수평으로 눕힘
+            const row = Math.floor(idx / 2), col = idx % 2
+            plane.position.set(
+              b.x + (col - 0.5) * 0.72,
+              yOff + 0.07,
+              b.z + (row - 0.8) * 0.48
+            )
+            city.add(plane)
+          })
+
           yOff += fl.h
         })
-        // Spire
+
+        // 첨탑
         const spire = new THREE.Mesh(
           new THREE.CylinderGeometry(0.025, 0.07, 2.0, 8),
           new THREE.MeshBasicMaterial({ color: 0x66aaff })
         )
-        spire.position.set(b.x, yOff + 1.0, b.z)
-        city.add(spire)
+        spire.position.set(b.x, yOff + 1.0, b.z); city.add(spire)
         slab(b.w, b.d, b.x, b.z, 0x2244cc)
 
       } else {
-        // Normal building
+        // 일반 타워
+        const eI = b.type === 'main' ? 0.30 : b.type === 'pinned' ? 0.24 : 0.15
         const geo = new THREE.BoxGeometry(b.w, b.h, b.d)
         const mat = new THREE.MeshStandardMaterial({
-          color: b.base, roughness: 0.18, metalness: 0.88,
-          emissive: new THREE.Color(b.accent),
-          emissiveIntensity: b.type === 'main' ? 0.28 : b.type === 'pinned' ? 0.22 : 0.16,
+          color: b.base, roughness: 0.15, metalness: 0.9,
+          emissive: new THREE.Color(b.accent), emissiveIntensity: eI,
         })
         const mesh = new THREE.Mesh(geo, mat)
         mesh.position.set(b.x, b.h / 2, b.z)
         mesh.castShadow = true
-        mesh.userData = { bldData: b, mat, baseI: mat.emissiveIntensity }
-        clickables.push(mesh)
-        city.add(mesh)
+        mesh.userData = { bldData: b, mat, baseI: eI }
+        clickables.push(mesh); city.add(mesh)
 
-        // Wireframe
-        const wm = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({ color: b.wire, wireframe: true, transparent: true, opacity: b.type === 'main' ? 0.12 : 0.07 }))
-        wm.position.copy(mesh.position)
-        city.add(wm)
+        // 와이어프레임
+        const wm = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({ color: b.wire, wireframe: true, transparent: true, opacity: b.type === 'main' ? 0.10 : 0.055 }))
+        wm.position.copy(mesh.position); city.add(wm)
+
+        // 층 구분선
+        addFloorLines(b, b.wire)
+
+        // 창문 불빛
+        addWindowStrips(b)
 
         // Base slab
         slab(b.w, b.d, b.x, b.z, b.accent)
@@ -434,8 +500,7 @@ export default function CityScene() {
             new THREE.BoxGeometry(b.w * 0.55, 0.07, b.d * 0.55),
             new THREE.MeshBasicMaterial({ color: b.wire, transparent: true, opacity: 0.8 })
           )
-          roof.position.set(b.x, b.h + 0.04, b.z)
-          city.add(roof)
+          roof.position.set(b.x, b.h + 0.04, b.z); city.add(roof)
         }
       }
     })
@@ -444,21 +509,20 @@ export default function CityScene() {
     interface Stream { mesh: THREE.Mesh; s: THREE.Vector3; e: THREE.Vector3; t: number; spd: number; dir: 1|-1 }
     const streams: Stream[] = []
     const bldMap = Object.fromEntries(BUILDINGS.map(b => [b.id, b]))
-    const sMat = new THREE.MeshBasicMaterial({ color: 0x40eeff, transparent: true, opacity: 0.75 })
+    const sMat = new THREE.MeshBasicMaterial({ color: 0x55ddff, transparent: true, opacity: 0.75 })
     const sGeo = new THREE.BoxGeometry(0.5, 0.04, 0.08)
     STREAM_PAIRS.forEach(([aid, bid]) => {
-      const a = bldMap[aid], b = bldMap[bid]
-      if (!a || !b) return
+      const a = bldMap[aid], bv = bldMap[bid]
+      if (!a || !bv) return
       for (let i = 0; i < 2; i++) {
         const m = new THREE.Mesh(sGeo, sMat.clone())
         const stream: Stream = {
           mesh: m,
-          s: new THREE.Vector3(a.x, 0.08 + i * 0.1, a.z),
-          e: new THREE.Vector3(b.x, 0.08 + i * 0.1, b.z),
+          s: new THREE.Vector3(a.x,  0.08 + i * 0.1, a.z),
+          e: new THREE.Vector3(bv.x, 0.08 + i * 0.1, bv.z),
           t: Math.random(), spd: 0.004 + Math.random() * 0.004, dir: 1,
         }
-        streams.push(stream)
-        city.add(m)
+        streams.push(stream); city.add(m)
       }
     })
 
@@ -468,11 +532,8 @@ export default function CityScene() {
     const camTarget  = CAM_BASE.clone()
     const lookTarget = new THREE.Vector3(0, 2, 0)
 
-    // Drag rotation
     let dragging = false, prevX = 0, prevY = 0
     let velY = 0, velX = 0, tgtY = 0, tgtX = 0.0
-
-    // Hover
     let hovMesh: THREE.Mesh | null = null
     const ray = new THREE.Raycaster()
 
@@ -496,78 +557,97 @@ export default function CityScene() {
       return new THREE.Vector2(((cx-r.left)/r.width)*2-1, -((cy-r.top)/r.height)*2+1)
     }
 
-    // Events
-    const onDown  = (e: MouseEvent) => { if (selBld) return; dragging=true; velY=velX=0; prevX=e.clientX; prevY=e.clientY; renderer.domElement.style.cursor='grabbing' }
+    const onDown  = (e: MouseEvent) => {
+      if (selBld) return
+      dragging = true; velY = velX = 0; prevX = e.clientX; prevY = e.clientY
+      renderer.domElement.style.cursor = 'grabbing'
+    }
     const onMove  = (e: MouseEvent) => {
-      // Hover
       if (!selBld) {
         ray.setFromCamera(getNDC(e.clientX, e.clientY), camera)
         const hits = ray.intersectObjects(clickables, false)
         if (hovMesh) { (hovMesh.userData.mat as THREE.MeshStandardMaterial).emissiveIntensity = hovMesh.userData.baseI; hovMesh = null }
-        if (hits.length) { hovMesh = hits[0].object as THREE.Mesh; (hovMesh.userData.mat as THREE.MeshStandardMaterial).emissiveIntensity = 0.65; renderer.domElement.style.cursor = dragging ? 'grabbing' : 'pointer' }
-        else if (!dragging) renderer.domElement.style.cursor = 'grab'
+        if (hits.length) {
+          hovMesh = hits[0].object as THREE.Mesh
+          ;(hovMesh.userData.mat as THREE.MeshStandardMaterial).emissiveIntensity = 0.65
+          renderer.domElement.style.cursor = dragging ? 'grabbing' : 'pointer'
+        } else if (!dragging) renderer.domElement.style.cursor = 'grab'
       }
       if (!dragging || selBld) return
-      const dx = (e.clientX-prevX)*0.009, dy = (e.clientY-prevY)*0.009
-      velY=dx; velX=dy; tgtY+=dx; tgtX+=dy; prevX=e.clientX; prevY=e.clientY
+      const dx = (e.clientX - prevX) * 0.006   // 감도 줄임
+      const dy = (e.clientY - prevY) * 0.006
+      velY = dx; velX = dy; tgtY += dx; tgtX += dy
+      prevX = e.clientX; prevY = e.clientY
     }
-    const onUp    = () => { dragging=false; renderer.domElement.style.cursor = 'grab' }
+    const onUp    = () => { dragging = false; renderer.domElement.style.cursor = 'grab' }
     const onClick = (e: MouseEvent) => {
-      if (selBld || Math.abs(velY)>0.01) return
+      if (selBld || Math.abs(velY) > 0.01) return
       ray.setFromCamera(getNDC(e.clientX, e.clientY), camera)
       const hits = ray.intersectObjects(clickables, false)
       if (hits.length) { const b = hits[0].object.userData.bldData as BldData; if (b) doSelect(b) }
     }
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
-      cameraZoom = Math.max(0.22, Math.min(4.0, cameraZoom * (e.deltaY > 0 ? 1.12 : 0.9)))
+      cameraZoom = Math.max(0.3, Math.min(3.2, cameraZoom * (e.deltaY > 0 ? 1.1 : 0.91)))
       if (!selBld) camTarget.copy(CAM_BASE).multiplyScalar(cameraZoom)
     }
-    const onResize = () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight) }
+    const onResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(window.innerWidth, window.innerHeight)
+    }
 
-    // Touch
     let lastPinch = 0
-    const onTStart = (e: TouchEvent) => { if (e.touches.length===1){dragging=true;velY=velX=0;prevX=e.touches[0].clientX;prevY=e.touches[0].clientY} if(e.touches.length===2)lastPinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY) }
-    const onTMove  = (e: TouchEvent) => {
+    const onTStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) { dragging=true; velY=velX=0; prevX=e.touches[0].clientX; prevY=e.touches[0].clientY }
+      if (e.touches.length === 2) lastPinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY)
+    }
+    const onTMove = (e: TouchEvent) => {
       e.preventDefault()
-      if (e.touches.length===1&&dragging){const dx=(e.touches[0].clientX-prevX)*0.009,dy=(e.touches[0].clientY-prevY)*0.009;velY=dx;velX=dy;tgtY+=dx;tgtX+=dy;prevX=e.touches[0].clientX;prevY=e.touches[0].clientY}
-      if (e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(lastPinch>0){cameraZoom=Math.max(0.22,Math.min(4,cameraZoom*lastPinch/d));if(!selBld)camTarget.copy(CAM_BASE).multiplyScalar(cameraZoom)}lastPinch=d}
+      if (e.touches.length===1 && dragging) {
+        const dx=(e.touches[0].clientX-prevX)*0.006, dy=(e.touches[0].clientY-prevY)*0.006
+        velY=dx; velX=dy; tgtY+=dx; tgtX+=dy; prevX=e.touches[0].clientX; prevY=e.touches[0].clientY
+      }
+      if (e.touches.length===2) {
+        const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY)
+        if (lastPinch > 0) { cameraZoom=Math.max(0.3,Math.min(3.2,cameraZoom*lastPinch/d)); if(!selBld)camTarget.copy(CAM_BASE).multiplyScalar(cameraZoom) }
+        lastPinch = d
+      }
     }
     const onTEnd = () => { dragging=false; lastPinch=0 }
 
     renderer.domElement.style.cursor = 'grab'
-    renderer.domElement.addEventListener('mousedown', onDown)
-    renderer.domElement.addEventListener('mousemove', onMove)
-    renderer.domElement.addEventListener('mouseup',   onUp)
-    renderer.domElement.addEventListener('click',     onClick)
-    renderer.domElement.addEventListener('wheel',     onWheel, { passive: false })
-    renderer.domElement.addEventListener('touchstart',onTStart, { passive: false })
-    renderer.domElement.addEventListener('touchmove', onTMove,  { passive: false })
-    renderer.domElement.addEventListener('touchend',  onTEnd)
+    renderer.domElement.addEventListener('mousedown',  onDown)
+    renderer.domElement.addEventListener('mousemove',  onMove)
+    renderer.domElement.addEventListener('mouseup',    onUp)
+    renderer.domElement.addEventListener('click',      onClick)
+    renderer.domElement.addEventListener('wheel',      onWheel, { passive: false })
+    renderer.domElement.addEventListener('touchstart', onTStart, { passive: false })
+    renderer.domElement.addEventListener('touchmove',  onTMove,  { passive: false })
+    renderer.domElement.addEventListener('touchend',   onTEnd)
     window.addEventListener('resize', onResize)
 
     // ── Animation loop ─────────────────────────────────────────────────────────
     let raf: number, t = 0
-
     const animate = () => {
       raf = requestAnimationFrame(animate)
       t += 0.001
 
-      // City rotation
       if (selBld) {
         city.rotation.y *= 0.9; city.rotation.x *= 0.9
       } else {
         if (!dragging) { velY *= 0.94; velX *= 0.94; tgtY += velY; tgtX += velX }
+        // 수직 회전 클램핑 (-0.25 ~ 0.60) — 너무 뒤집히지 않도록
+        tgtX = Math.max(-0.25, Math.min(0.60, tgtX))
         city.rotation.y += (tgtY - city.rotation.y) * 0.1
         city.rotation.x += (tgtX - city.rotation.x) * 0.1
       }
 
-      // Smooth camera
       camera.position.lerp(camTarget, 0.055)
       lookCur.lerp(lookTarget, 0.055)
       camera.lookAt(lookCur)
 
-      // Contribution cloud drift
+      // 구름 드리프트
       cloudGroup.children.forEach(child => {
         const u = (child as THREE.Sprite).userData
         if (!u.dx) return
@@ -579,11 +659,11 @@ export default function CityScene() {
         if (child.position.z < -13) child.position.z =  13
       })
 
-      // Data streams
+      // 데이터 스트림
       streams.forEach(s => {
         s.t += s.spd * s.dir
         if (s.t >= 1) { s.t = 1; s.dir = -1 }
-        if (s.t <= 0) { s.t = 0; s.dir = 1 }
+        if (s.t <= 0) { s.t = 0; s.dir =  1 }
         s.mesh.position.lerpVectors(s.s, s.e, s.t)
         const d = s.e.clone().sub(s.s)
         s.mesh.rotation.y = Math.atan2(d.x, d.z)
@@ -594,19 +674,17 @@ export default function CityScene() {
     animate()
 
     return () => {
-      renderer.domElement.removeEventListener('mousedown', onDown)
-      renderer.domElement.removeEventListener('mousemove', onMove)
-      renderer.domElement.removeEventListener('mouseup',   onUp)
-      renderer.domElement.removeEventListener('click',     onClick)
-      renderer.domElement.removeEventListener('wheel',     onWheel)
-      renderer.domElement.removeEventListener('touchstart',onTStart)
-      renderer.domElement.removeEventListener('touchmove', onTMove)
-      renderer.domElement.removeEventListener('touchend',  onTEnd)
+      renderer.domElement.removeEventListener('mousedown',  onDown)
+      renderer.domElement.removeEventListener('mousemove',  onMove)
+      renderer.domElement.removeEventListener('mouseup',    onUp)
+      renderer.domElement.removeEventListener('click',      onClick)
+      renderer.domElement.removeEventListener('wheel',      onWheel)
+      renderer.domElement.removeEventListener('touchstart', onTStart)
+      renderer.domElement.removeEventListener('touchmove',  onTMove)
+      renderer.domElement.removeEventListener('touchend',   onTEnd)
       window.removeEventListener('resize', onResize)
       cancelAnimationFrame(raf)
-      cloudGroupRef.current = null
-      cloudTexRef.current   = null
-      cityRef.current       = null
+      cloudGroupRef.current = null; cloudTexRef.current = null; cityRef.current = null
       renderer.dispose()
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement)
     }
