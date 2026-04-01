@@ -25,6 +25,7 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
     defaultCameraPos: THREE.Vector3
     targetCameraPos: THREE.Vector3 | null
     targetCameraLookAt: THREE.Vector3 | null
+    framingCenter: THREE.Vector3 | null // Add this to remember center
     composer?: EffectComposer | null
   }>({
     controls: null,
@@ -33,6 +34,7 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
     defaultCameraPos: new THREE.Vector3(0, 15, 30),
     targetCameraPos: null,
     targetCameraLookAt: null,
+    framingCenter: null,
   })
 
   useEffect(() => {
@@ -85,10 +87,10 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
       (gltf) => {
         const model = gltf.scene
         
-        // -- EXTREME BULLETPROOF FRAMING (Handles NaN Geometries) --
-        // Calculate bounding box manually to ignore any corrupt (NaN) geometries in the GLTF
+        // -- AUTO CAMERA RIGGING (No Scaling) --
         model.updateMatrixWorld(true)
-        const box = new THREE.Box3()
+        const contentBox = new THREE.Box3()
+        
         model.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
                 const mesh = child as THREE.Mesh
@@ -97,85 +99,69 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
                 if (b && isFinite(b.max.x) && !isNaN(b.max.x)) {
                     const localSize = b.getSize(new THREE.Vector3())
                     
-                    // DETECT AND HIDE GIANT FLOOR PLANES
-                    // Spline often exports a massive background plane that ruins auto-framing
-                    if (Math.max(localSize.x, localSize.y, localSize.z) > 500) {
-                        mesh.visible = false // Hide the grey slab
-                        return // Do NOT add it to the bounding box!
+                    // 1. Detect giant floor planes (Spline backgrounds)
+                    if (Math.max(localSize.x, localSize.y, localSize.z) > 400) {
+                        // Instead of hiding, paint it deep space black to naturally blend with background
+                        mesh.material = new THREE.MeshBasicMaterial({ color: 0x040608 })
+                        return // Skip adding this background to the content bounding box
                     }
 
-                    // Boost Emissive glow for dark mode
+                    // 2. Boost Emissive glow for neon effects
                     if (mesh.material && (mesh.material as any).emissive) {
                         const mat = mesh.material as THREE.MeshStandardMaterial
-                        // If it has any emissive color, multiply it greatly for the Bloom filter
                         if (mat.emissive.r > 0 || mat.emissive.g > 0 || mat.emissive.b > 0) {
-                            mat.emissiveIntensity = 3.0
+                            mat.emissiveIntensity = 2.5
                         }
                     }
 
+                    // 3. Add valid, non-background mesh to the content box
                     const worldBox = b.clone().applyMatrix4(mesh.matrixWorld)
-                    box.union(worldBox)
+                    contentBox.union(worldBox)
                 }
             }
         })
 
+        // -- Compute Camera Framing --
         const size = new THREE.Vector3()
         const center = new THREE.Vector3()
+        let maxDim = 100 // default fallback
         
-        if (!box.isEmpty() && isFinite(box.max.x)) {
-            box.getSize(size)
-            box.getCenter(center)
-            const maxDim = Math.max(size.x, size.y, size.z)
-            
-            if (maxDim > 0) {
-                const scaleFactor = 40 / maxDim
-                model.scale.setScalar(scaleFactor)
-                model.updateMatrixWorld(true)
-                
-                // Re-center
-                const scaledBox = new THREE.Box3()
-                model.traverse((child) => {
-                    if ((child as THREE.Mesh).isMesh) {
-                        const mesh = child as THREE.Mesh
-                        const b = mesh.geometry.boundingBox
-                        if (b && isFinite(b.max.x) && !isNaN(b.max.x) && mesh.visible) {
-                            const worldBox = b.clone().applyMatrix4(mesh.matrixWorld)
-                            scaledBox.union(worldBox)
-                        }
-                    }
-                })
-                scaledBox.getCenter(center)
-            }
+        if (!contentBox.isEmpty() && isFinite(contentBox.max.x)) {
+            contentBox.getSize(size)
+            contentBox.getCenter(center)
+            maxDim = Math.max(size.x, size.y, size.z)
         }
 
-        // Apply negative center offset to position the valid geometries exactly at origin
-        model.position.x -= center.x
-        model.position.y -= center.y
-        model.position.z -= center.z
-
-        // Expand camera planes heavily
+        // Expand camera clipping planes safely based on real dimensions
         camera.near = 0.5
-        camera.far = 15000
+        camera.far = Math.max(10000, maxDim * 10)
         camera.updateProjectionMatrix()
 
-        // Safely place camera back from the 40-unit model
-        camera.position.set(0, 15, 60)
-        controls.target.set(0, 0, 0)
+        // Position camera relative to the REAL center and size of the content
+        const cameraZ = center.z + maxDim * 1.5
+        const cameraY = center.y + maxDim * 0.8
+        camera.position.set(center.x, cameraY, cameraZ)
+        
+        controls.target.copy(center)
         controls.update()
 
-        // Update references for reset/lerp
+        // Update references for zooming back out smoothly
         sceneRef.current.defaultCameraPos.copy(camera.position)
         sceneRef.current.targetCameraPos = sceneRef.current.defaultCameraPos.clone()
-        sceneRef.current.targetCameraLookAt = new THREE.Vector3(0, 0, 0)
+        sceneRef.current.targetCameraLookAt = center.clone()
+        sceneRef.current.framingCenter = center.clone()
         
-        console.log(`Model Reloaded! Scaled to 40 max.`)
+        console.log(`Auto Camera Rigged! Center:`, center, `MaxDim:`, maxDim)
 
         // Find some distinct meshes to attach CARDS data to
         const possibleMeshes: THREE.Mesh[] = []
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh
-            if (!mesh.visible) return // Skip the giant hidden floor
+            // Skip the newly blackened background plane
+            if ((mesh.material as THREE.MeshBasicMaterial).color?.getHex() === 0x040608) {
+               return
+            }
 
             
             // Generate bounding boxes and ignore corrupted geometry
@@ -358,10 +344,12 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
             sceneRef.current.targetCameraPos = targetCenter.clone().add(offset)
             sceneRef.current.targetCameraLookAt = targetCenter.clone()
         }
-     } else {
-        // Reset view
+      } else {
+        // Reset view to framing center
         sceneRef.current.targetCameraPos = sceneRef.current.defaultCameraPos.clone()
-        sceneRef.current.targetCameraLookAt = new THREE.Vector3(0, 0, 0)
+        if (sceneRef.current.framingCenter) {
+            sceneRef.current.targetCameraLookAt = sceneRef.current.framingCenter.clone()
+        }
      }
   }, [activeCardId])
 
