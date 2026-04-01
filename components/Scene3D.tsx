@@ -138,8 +138,9 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
         camera.updateProjectionMatrix()
 
         // Position camera relative to the REAL center and size of the content
-        const cameraZ = center.z + maxDim * 1.5
-        const cameraY = center.y + maxDim * 0.8
+        // Zooming in closer per user request
+        const cameraZ = center.z + maxDim * 0.9
+        const cameraY = center.y + maxDim * 0.6
         camera.position.set(center.x, cameraY, cameraZ)
         
         controls.target.copy(center)
@@ -193,10 +194,14 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
         // Map the first few suitable meshes to CARDS
         const interactive = []
         for (let i = 0; i < Math.min(CARDS.length, possibleMeshes.length); i++) {
-           interactive.push({ mesh: possibleMeshes[i], cardId: CARDS[i].id })
-           // Add a subtle glowing outline/material to indicate it's clickable
-           const origMat = possibleMeshes[i].material
-           possibleMeshes[i].userData = { isInteractive: true, originalMaterial: origMat, cardId: CARDS[i].id }
+           const targetMesh = possibleMeshes[i]
+           // CLONE the material so glowing one mesh doesn't accidentally glow all shared materials!
+           if (targetMesh.material) {
+               targetMesh.material = (targetMesh.material as THREE.Material).clone()
+           }
+           
+           interactive.push({ mesh: targetMesh, cardId: CARDS[i].id })
+           targetMesh.userData = { isInteractive: true, cardId: CARDS[i].id }
         }
         sceneRef.current.interactiveMeshes = interactive
 
@@ -288,17 +293,19 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
           controls.enabled = true
       }
 
-      // Add a subtle hovering effect to interactive meshes
-      const time = Date.now() * 0.001
-      sceneRef.current.interactiveMeshes.forEach((item, index) => {
-        // Gently pulse opacity or emissive if hovered? (Optional polish)
-        if (item.mesh.material && (item.mesh.material as THREE.MeshStandardMaterial).emissive) {
+      // Add a smooth transitioning glowing effect to interactive meshes
+      sceneRef.current.interactiveMeshes.forEach((item) => {
+        if (item.mesh.material && (item.mesh.material as any).emissive !== undefined) {
            const mat = item.mesh.material as THREE.MeshStandardMaterial
+           
            if (item.cardId === activeCardId) {
-             // highlight currently active
-             mat.emissive.setHex(0x3366ff)
+             // Smoothly lerp towards a bright glowing neon cyan when active
+             mat.emissive.lerp(new THREE.Color(0x33ccff), 0.1)
+             mat.emissiveIntensity = THREE.MathUtils.lerp(mat.emissiveIntensity, 5.0, 0.1)
            } else {
-             mat.emissive.setHex(0x000000)
+             // Smoothly dim back to original dark state when inactive
+             mat.emissive.lerp(new THREE.Color(0x000000), 0.1)
+             mat.emissiveIntensity = THREE.MathUtils.lerp(mat.emissiveIntensity, 0.0, 0.1)
            }
         }
       })
