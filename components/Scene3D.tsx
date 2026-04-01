@@ -1,179 +1,260 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { CARDS } from '@/lib/data'
 
-export default function Scene3D() {
+interface Scene3DProps {
+  activeCardId: string | null
+  onSelectCard: (id: string) => void
+}
+
+export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
   const mountRef = useRef<HTMLDivElement>(null)
+
+  // We store references to our mutable 3D objects here to access them in effect
+  const sceneRef = useRef<{
+    controls: OrbitControls | null
+    camera: THREE.PerspectiveCamera | null
+    interactiveMeshes: { mesh: THREE.Mesh; cardId: string }[]
+    defaultCameraPos: THREE.Vector3
+    targetCameraPos: THREE.Vector3 | null
+    targetCameraLookAt: THREE.Vector3 | null
+  }>({
+    controls: null,
+    camera: null,
+    interactiveMeshes: [],
+    defaultCameraPos: new THREE.Vector3(0, 15, 30),
+    targetCameraPos: null,
+    targetCameraLookAt: null,
+  })
 
   useEffect(() => {
     if (!mountRef.current) return
 
-    // Setup Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(window.innerWidth, window.innerHeight)
-    // Darker, premium background color
-    renderer.setClearColor(0x000205, 1)
     mountRef.current.appendChild(renderer.domElement)
 
-    // Setup Scene & Camera
     const scene = new THREE.Scene()
-    scene.fog = new THREE.FogExp2(0x000205, 0.0015) // Deep fog for depth
 
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-    camera.position.set(0, 10, 60)
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000)
+    camera.position.copy(sceneRef.current.defaultCameraPos)
+    sceneRef.current.camera = camera
 
-    // Interactive Group
-    const group = new THREE.Group()
-    scene.add(group)
+    const controls = new OrbitControls(camera, renderer.domElement)
+    controls.enableDamping = true
+    controls.dampingFactor = 0.05
+    controls.minDistance = 5
+    controls.maxDistance = 100
+    sceneRef.current.controls = controls
 
-    // Create Premium Particle Wave
-    const particleCount = 15000
-    const geometry = new THREE.BufferGeometry()
-    const positions = new Float32Array(particleCount * 3)
-    const colors = new Float32Array(particleCount * 3)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2)
+    scene.add(ambientLight)
 
-    const color1 = new THREE.Color(0x68d8be) // Turquoise
-    const color2 = new THREE.Color(0x7aaef4) // Blue
-    const color3 = new THREE.Color(0x75acf5) // Light Blue
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+    directionalLight.position.set(20, 30, 20)
+    scene.add(directionalLight)
 
-    for (let i = 0; i < particleCount; i++) {
-        // distribute points evenly in x and z
-        const x = (Math.random() - 0.5) * 200
-        const z = (Math.random() - 0.5) * 200
-        const y = 0
+    const directionalLight2 = new THREE.DirectionalLight(0xaabbff, 1)
+    directionalLight2.position.set(-20, -10, -20)
+    scene.add(directionalLight2)
+
+    const loader = new GLTFLoader()
+    loader.load(
+      '/models/web_diagram_copy.gltf',
+      (gltf) => {
+        const model = gltf.scene
         
-        positions[i * 3] = x
-        positions[i * 3 + 1] = y
-        positions[i * 3 + 2] = z
+        // Center the model
+        const box = new THREE.Box3().setFromObject(model)
+        const center = box.getCenter(new THREE.Vector3())
+        model.position.x += (model.position.x - center.x)
+        model.position.y += (model.position.y - center.y)
+        model.position.z += (model.position.z - center.z)
 
-        // Color based on random distribution
-        const mixedColor = color1.clone().lerp(color2, Math.random()).lerp(color3, Math.random())
-        colors[i * 3] = mixedColor.r
-        colors[i * 3 + 1] = mixedColor.g
-        colors[i * 3 + 2] = mixedColor.b
+        // Find some distinct meshes to attach CARDS data to
+        const possibleMeshes: THREE.Mesh[] = []
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            // Pick relatively large or named meshes
+            const mesh = child as THREE.Mesh
+            const b = new THREE.Box3().setFromObject(mesh)
+            const size = new THREE.Vector3()
+            b.getSize(size)
+            // Filtering out very tiny text/line meshes based on size volume
+            if (size.x * size.y * size.z > 0.5) {
+                possibleMeshes.push(mesh)
+            }
+          }
+        })
+
+        // Sort by volume descending so we assign main boxes first
+        possibleMeshes.sort((a, b) => {
+            const vA = new THREE.Box3().setFromObject(a).getSize(new THREE.Vector3())
+            const vB = new THREE.Box3().setFromObject(b).getSize(new THREE.Vector3())
+            return (vB.x*vB.y*vB.z) - (vA.x*vA.y*vA.z)
+        })
+
+        // Map the first few suitable meshes to CARDS
+        const interactive = []
+        for (let i = 0; i < Math.min(CARDS.length, possibleMeshes.length); i++) {
+           interactive.push({ mesh: possibleMeshes[i], cardId: CARDS[i].id })
+           // Add a subtle glowing outline/material to indicate it's clickable
+           const origMat = possibleMeshes[i].material
+           possibleMeshes[i].userData = { isInteractive: true, originalMaterial: origMat, cardId: CARDS[i].id }
+        }
+        sceneRef.current.interactiveMeshes = interactive
+
+        scene.add(model)
+      },
+      undefined,
+      (error) => console.error('Error loading gltf:', error)
+    )
+
+    // Raycaster for click events
+    const raycaster = new THREE.Raycaster()
+    const mouse = new THREE.Vector2()
+
+    const onPointerDown = (event: PointerEvent) => {
+      // Don't raycast if it's right click
+      if (event.button !== 0) return
+
+      // Convert mouse position to normalized device coordinates (-1 to +1)
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+
+      raycaster.setFromCamera(mouse, camera)
+      
+      const meshes = sceneRef.current.interactiveMeshes.map(i => i.mesh)
+      const intersects = raycaster.intersectObjects(meshes, false)
+
+      if (intersects.length > 0) {
+        // Found a clicked interactive mesh
+        const clickedMesh = intersects[0].object as THREE.Mesh
+        const cardId = clickedMesh.userData.cardId
+        onSelectCard(cardId) // Tell React to open the UI
+      }
     }
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+    const onPointerMove = (event: PointerEvent) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+        raycaster.setFromCamera(mouse, camera)
 
-    // Create a circular texture for particles
-    const canvas = document.createElement('canvas')
-    canvas.width = 16
-    canvas.height = 16
-    const context = canvas.getContext('2d')
-    if (context) {
-        const gradient = context.createRadialGradient(8, 8, 0, 8, 8, 8)
-        gradient.addColorStop(0, 'rgba(255,255,255,1)')
-        gradient.addColorStop(1, 'rgba(255,255,255,0)')
-        context.fillStyle = gradient
-        context.fillRect(0, 0, 16, 16)
+        const meshes = sceneRef.current.interactiveMeshes.map(i => i.mesh)
+        const intersects = raycaster.intersectObjects(meshes, false)
+        
+        if (intersects.length > 0) {
+            document.body.style.cursor = 'pointer'
+        } else {
+            document.body.style.cursor = 'default'
+        }
     }
-    const particleTexture = new THREE.CanvasTexture(canvas)
 
-    const material = new THREE.PointsMaterial({
-        size: 0.6,
-        vertexColors: true,
-        map: particleTexture,
-        transparent: true,
-        opacity: 0.8,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
-    })
+    // Bind events
+    window.addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('pointermove', onPointerMove)
 
-    const particles = new THREE.Points(geometry, material)
-    group.add(particles)
-
-    // Glowing lines to connect some central particles (aesthetic touch)
-    const lineGeo = new THREE.BufferGeometry()
-    const linePoss = []
-    for(let i=0; i<300; i++) {
-        const theta = Math.random() * Math.PI * 2
-        linePoss.push(Math.sin(theta)*15, (Math.random()-0.5)*10, Math.cos(theta)*15)
-        const theta2 = theta + (Math.random()-0.5)*0.5
-        linePoss.push(Math.sin(theta2)*15, (Math.random()-0.5)*10, Math.cos(theta2)*15)
-    }
-    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePoss, 3))
-    const lineMat = new THREE.LineBasicMaterial({
-        color: 0x6ea2f3,
-        transparent: true,
-        opacity: 0.15,
-        blending: THREE.AdditiveBlending
-    })
-    const lines = new THREE.LineSegments(lineGeo, lineMat)
-    group.add(lines)
-
-    // Mouse Interaction
-    let targetX = 0
-    let targetY = 0
-    const onMouseMove = (event: MouseEvent) => {
-        targetX = (event.clientX - window.innerWidth / 2) * 0.001
-        targetY = (event.clientY - window.innerHeight / 2) * 0.001
-    }
-    window.addEventListener('mousemove', onMouseMove)
-
-    // Resize Handler
     const onResize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight
-        camera.updateProjectionMatrix()
-        renderer.setSize(window.innerWidth, window.innerHeight)
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(window.innerWidth, window.innerHeight)
     }
     window.addEventListener('resize', onResize)
 
-    // Animation Loop
-    let time = 0
     let rafId: number
     const animate = () => {
-        time += 0.005
-        rafId = requestAnimationFrame(animate)
+      rafId = requestAnimationFrame(animate)
 
-        // Wave animation
-        const posAttribute = geometry.attributes.position
-        for(let i = 0; i < particleCount; i++) {
-            const x = posAttribute.getX(i)
-            const z = posAttribute.getZ(i)
-            
-            // Complex wave equation
-            const y = Math.sin(x * 0.05 + time) * 3 + Math.cos(z * 0.05 + time * 0.8) * 3 + Math.sin((x+z)*0.02 + time)*2
-            posAttribute.setY(i, y)
+      controls.update()
+
+      // Handle Camera Lerping when a card is selected
+      const { targetCameraPos, targetCameraLookAt } = sceneRef.current
+      if (targetCameraPos && targetCameraLookAt) {
+          // Temporarily disable controls while lerping
+          controls.enabled = false
+          camera.position.lerp(targetCameraPos, 0.05)
+          
+          // Lerp camera target
+          controls.target.lerp(targetCameraLookAt, 0.05)
+      } else {
+          // If no active card, we can slowly lerp back to original target if we were zoomed in
+          controls.enabled = true
+      }
+
+      // Add a subtle hovering effect to interactive meshes
+      const time = Date.now() * 0.001
+      sceneRef.current.interactiveMeshes.forEach((item, index) => {
+        // Gently pulse opacity or emissive if hovered? (Optional polish)
+        if (item.mesh.material && (item.mesh.material as THREE.MeshStandardMaterial).emissive) {
+           const mat = item.mesh.material as THREE.MeshStandardMaterial
+           if (item.cardId === activeCardId) {
+             // highlight currently active
+             mat.emissive.setHex(0x3366ff)
+           } else {
+             mat.emissive.setHex(0x000000)
+           }
         }
-        posAttribute.needsUpdate = true
+      })
 
-        // Smoothly rotate group based on mouse
-        group.rotation.y += (targetX * 0.5 - group.rotation.y) * 0.05
-        group.rotation.x += (targetY * 0.2 - group.rotation.x) * 0.05
-
-        // Gentle camera float
-        camera.position.y = 15 + Math.sin(time*0.5) * 5
-
-        renderer.render(scene, camera)
+      renderer.render(scene, camera)
     }
     animate()
 
     return () => {
-        window.removeEventListener('mousemove', onMouseMove)
-        window.removeEventListener('resize', onResize)
-        cancelAnimationFrame(rafId)
-        renderer.dispose()
-        if (mountRef.current?.contains(renderer.domElement)) {
-            mountRef.current.removeChild(renderer.domElement)
-        }
+      window.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('resize', onResize)
+      cancelAnimationFrame(rafId)
+      renderer.dispose()
+      document.body.style.cursor = 'default'
+      if (mountRef.current?.contains(renderer.domElement)) {
+        mountRef.current.removeChild(renderer.domElement)
+      }
     }
-  }, [])
+  }, [onSelectCard])
+
+  // Sync activeCardId changes to camera targets
+  useEffect(() => {
+     if (!sceneRef.current.camera) return
+
+     if (activeCardId) {
+        // Find the mesh associated with this card
+        const match = sceneRef.current.interactiveMeshes.find(m => m.cardId === activeCardId)
+        if (match) {
+            const meshBox = new THREE.Box3().setFromObject(match.mesh)
+            const targetCenter = meshBox.getCenter(new THREE.Vector3())
+            
+            // Calculate a position slightly above and in front of the box
+            const size = meshBox.getSize(new THREE.Vector3())
+            const maxDim = Math.max(size.x, size.y, size.z)
+            const offset = new THREE.Vector3(maxDim, maxDim, maxDim).multiplyScalar(1.5)
+            
+            sceneRef.current.targetCameraPos = targetCenter.clone().add(offset)
+            sceneRef.current.targetCameraLookAt = targetCenter.clone()
+        }
+     } else {
+        // Reset view
+        sceneRef.current.targetCameraPos = sceneRef.current.defaultCameraPos.clone()
+        sceneRef.current.targetCameraLookAt = new THREE.Vector3(0, 0, 0)
+     }
+  }, [activeCardId])
 
   return (
     <div
       ref={mountRef}
       style={{
-        position: 'fixed',
+        position: 'absolute',
         top: 0,
         left: 0,
         width: '100vw',
         height: '100vh',
-        zIndex: -1,
-        pointerEvents: 'none',
-        background: '#000205'
+        zIndex: 0,
+        background: '#04070a' // Subtle dark space gradient
       }}
     />
   )

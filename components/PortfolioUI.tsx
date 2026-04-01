@@ -1,7 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { CARDS, SkillIcon, SkillTag } from '@/lib/data'
+
+interface PortfolioUIProps {
+  activeCardId: string | null
+  onClose: () => void
+}
 
 function SkillGlyph({ icon, color }: { icon: SkillIcon; color: string }) {
   const common = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' }
@@ -37,21 +42,7 @@ function SkillChip({ tag }: { tag: SkillTag }) {
       color: '#eef1f5',
       fontSize: '0.85rem',
       fontWeight: 500,
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-      transition: 'all 0.2s ease',
-      cursor: 'default',
-    }}
-    onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255, 255, 255, 0.1)';
-        (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-    }}
-    onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255, 255, 255, 0.05)';
-        (e.currentTarget as HTMLElement).style.transform = 'translateY(0px)';
-    }}
-    >
+    }}>
       <span style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -69,299 +60,157 @@ function SkillChip({ tag }: { tag: SkillTag }) {
   )
 }
 
-function SectionTitle({ index, title }: { index: string; title: string }) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 36, opacity: 0.9 }}>
-        <span style={{ fontSize: '0.85rem', letterSpacing: '0.25em', fontWeight: 600, color: '#7aaef4' }}>
-          {index}
-        </span>
-        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg, #7aaef4, transparent)' }} />
-        <h2 style={{ fontSize: '1.8rem', letterSpacing: '-0.02em', fontWeight: 700, color: '#fff' }}>
-          {title}
-        </h2>
-      </div>
-    )
-}
+export default function PortfolioUI({ activeCardId, onClose }: PortfolioUIProps) {
+    const activeCard = CARDS.find(c => c.id === activeCardId)
 
-function GlassPanel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
     return (
         <div style={{
-            background: 'rgba(10, 15, 25, 0.45)', // Deep glass bg
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '24px',
-            boxShadow: '0 30px 60px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
-            backdropFilter: 'blur(30px)',
-            WebkitBackdropFilter: 'blur(30px)',
-            padding: '40px',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            ...style,
-        }}
-        onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
-            (e.currentTarget as HTMLElement).style.boxShadow = '0 40px 80px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)';
-        }}
-        onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = '0 30px 60px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)';
-        }}
-        >
-            {children}
-        </div>
-    )
-}
-
-export default function PortfolioUI() {
-    const [scrolled, setScrolled] = useState(false)
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 50)
-        }
-        window.addEventListener('scroll', handleScroll, { passive: true })
-        return () => window.removeEventListener('scroll', handleScroll)
-    }, [])
-
-    const profileData = CARDS.find(c => c.id === 'profile')!
-    const educationData = CARDS.find(c => c.id === 'education')!
-    const projectCards = CARDS.filter(c => c.section === 'Project')
-
-    return (
-        <main style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#f1f4f7' }}>
-            
-            {/* Header */}
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            pointerEvents: 'none', // Allow clicking through to the 3D scene
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: '#f1f4f7',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+        }}>
+            {/* Header HUD */}
             <header style={{
-                position: 'fixed',
+                position: 'absolute',
                 top: 0,
                 width: '100%',
-                padding: scrolled ? '16px 40px' : '32px 40px',
+                padding: '32px 40px',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                zIndex: 100,
-                transition: 'all 0.3s ease',
-                background: scrolled ? 'rgba(0, 2, 5, 0.7)' : 'transparent',
-                backdropFilter: scrolled ? 'blur(20px)' : 'none',
-                WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
-                borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent'
+                pointerEvents: 'auto',
             }}>
                 <div style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.05em' }}>
                     <span style={{ color: '#7aaef4' }}>D</span>.P
                 </div>
-                <a href="https://github.com/0206pdh" target="_blank" rel="noreferrer" style={{
-                    padding: '8px 20px',
-                    borderRadius: '999px',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#fff',
-                    textDecoration: 'none',
-                    fontSize: '0.9rem',
-                    fontWeight: 500,
-                    transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => (e.target as HTMLElement).style.background = 'rgba(255, 255, 255, 0.15)'}
-                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'rgba(255, 255, 255, 0.08)'}
-                >
-                    GitHub
-                </a>
+                {!activeCardId && (
+                    <div style={{
+                        padding: '10px 24px',
+                        borderRadius: '999px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        backdropFilter: 'blur(10px)',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        WebkitBackdropFilter: 'blur(10px)',
+                        animation: 'pulse 3s infinite'
+                    }}>
+                        모델 내의 블록을 클릭해 보세요
+                    </div>
+                )}
             </header>
 
-            {/* Container */}
-            <div style={{
-                maxWidth: '1200px',
-                margin: '0 auto',
-                padding: '0 32px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '120px',
-                paddingBottom: '120px'
-            }}>
-                
-                {/* Hero Section */}
-                <section style={{
-                    minHeight: '100vh',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    paddingTop: '60px'
+            {/* Main Modal Overlay */}
+            {activeCard && (
+                <div style={{
+                    pointerEvents: 'auto',
+                    background: 'rgba(10, 15, 25, 0.65)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '24px',
+                    boxShadow: '0 40px 100px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.2)',
+                    backdropFilter: 'blur(40px)',
+                    WebkitBackdropFilter: 'blur(40px)',
+                    padding: '48px',
+                    width: 'min(90vw, 800px)',
+                    animation: 'fadeInUp 0.4s ease-out forwards',
+                    position: 'relative'
                 }}>
-                    <div style={{
-                        display: 'inline-block',
-                        padding: '8px 16px',
-                        borderRadius: '999px',
-                        background: 'rgba(122, 174, 244, 0.1)',
-                        border: '1px solid rgba(122, 174, 244, 0.2)',
-                        color: '#7aaef4',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        letterSpacing: '0.05em',
-                        marginBottom: '24px',
-                        alignSelf: 'flex-start'
-                    }}>
-                        Portfolio 2026
+                    <button
+                        onClick={onClose}
+                        style={{
+                            position: 'absolute',
+                            top: '24px',
+                            right: '24px',
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            color: '#fff',
+                            fontSize: '1.2rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        ✕
+                    </button>
+
+                    <div style={{ fontSize: '0.85rem', color: '#7aaef4', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px', fontWeight: 600 }}>
+                        {activeCard.metrics[2]?.value || activeCard.section}
                     </div>
                     
-                    <h1 style={{
-                        fontSize: 'clamp(4rem, 8vw, 6.5rem)',
-                        fontWeight: 800,
-                        lineHeight: 1.05,
-                        letterSpacing: '-0.04em',
-                        marginBottom: '24px',
-                        background: 'linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.6) 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                    }}>
-                        Abstract &amp; <br/>
-                        <span style={{ color: '#7aaef4', background: 'none', WebkitTextFillColor: '#7aaef4' }}>Backend</span>
-                    </h1>
+                    <h2 style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1.1, marginBottom: '20px', letterSpacing: '-0.02em' }}>
+                        {activeCard.title}
+                    </h2>
                     
-                    <p style={{
-                        maxWidth: '600px',
-                        fontSize: '1.25rem',
-                        lineHeight: 1.6,
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        marginBottom: '48px'
-                    }}>
-                        {profileData.subtitle}. Computer Engineering student focused on AWS, scalable systems, and building interactive, high-performance web experiences.
+                    <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: '32px' }}>
+                        {activeCard.summary}
                     </p>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                        {profileData.tags.map(tag => <SkillChip key={tag.label} tag={tag} />)}
-                    </div>
-                </section>
-
-                {/* Info / About Section */}
-                <section>
-                    <SectionTitle index="01" title="Background" />
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-                        <GlassPanel>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '16px', color: '#fff' }}>
-                                {educationData.title}
-                            </h3>
-                            <h4 style={{ fontSize: '1.05rem', color: '#7aaef4', marginBottom: '16px' }}>{educationData.subtitle}</h4>
-                            <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: '24px' }}>
-                                {educationData.summary}
-                            </p>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                {educationData.metrics.map(m => (
-                                    <div key={m.label}>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{m.value}</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>{m.label}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </GlassPanel>
-
-                        <GlassPanel>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '16px', color: '#fff' }}>
-                                Core Competencies
-                            </h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div>
-                                    <div style={{ fontSize: '1.05rem', color: '#7aaef4', marginBottom: '8px' }}>Cloud & Architecture</div>
-                                    <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, fontSize: '0.95rem' }}>
-                                        Experience with AWS infrastructure (ECS, ECR, Load Balancers) and backend deployments ensuring high availability.
-                                    </p>
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '1.05rem', color: '#7aaef4', marginBottom: '8px' }}>Backend & Data</div>
-                                    <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, fontSize: '0.95rem' }}>
-                                        Building performant APIs utilizing Python (FastAPI), Redis for caching, and PostgreSQL for robust data management.
-                                    </p>
-                                </div>
-                            </div>
-                        </GlassPanel>
-                    </div>
-                </section>
-
-                {/* Projects Section */}
-                <section>
-                    <SectionTitle index="02" title="Selected Works" />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                        {projectCards.map((project, idx) => (
-                            <GlassPanel key={project.id} style={{ 
-                                padding: '48px',
-                                display: 'grid',
-                                gridTemplateColumns: idx % 2 === 0 ? '1.2fr 0.8fr' : '0.8fr 1.2fr',
-                                gap: '48px',
-                                alignItems: 'center'
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+                        {activeCard.metrics.map(metric => (
+                             <div key={metric.label} style={{
+                                padding: '16px',
+                                background: 'rgba(255,255,255,0.03)',
+                                borderRadius: '16px',
+                                border: '1px solid rgba(255,255,255,0.05)'
                             }}>
-                                <div style={{ order: idx % 2 === 0 ? 1 : 2 }}>
-                                    <div style={{ fontSize: '0.85rem', color: '#7aaef4', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px', fontWeight: 600 }}>
-                                        {project.metrics[2]?.value || project.section}
-                                    </div>
-                                    <h3 style={{ fontSize: '2.2rem', fontWeight: 700, lineHeight: 1.1, marginBottom: '20px', letterSpacing: '-0.02em' }}>
-                                        {project.title}
-                                    </h3>
-                                    <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, marginBottom: '32px' }}>
-                                        {project.summary}
-                                    </p>
-                                    
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '40px' }}>
-                                        {project.tags.map(tag => <SkillChip key={tag.label} tag={tag} />)}
-                                    </div>
-
-                                    {project.href && (
-                                        <a href={project.href} target="_blank" rel="noreferrer" style={{
-                                            display: 'inline-flex',
-                                            padding: '12px 28px',
-                                            borderRadius: '12px',
-                                            background: '#fff',
-                                            color: '#000',
-                                            textDecoration: 'none',
-                                            fontWeight: 700,
-                                            fontSize: '0.95rem',
-                                            transition: 'transform 0.2s',
-                                        }}
-                                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'}
-                                        onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.transform = 'scale(1)'}
-                                        >
-                                            View Source Code
-                                        </a>
-                                    )}
+                                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                                    {metric.label}
                                 </div>
-
-                                <div style={{ 
-                                    order: idx % 2 === 0 ? 2 : 1, 
-                                    background: 'rgba(0,0,0,0.2)', 
-                                    borderRadius: '20px', 
-                                    padding: '32px',
-                                    border: '1px solid rgba(255,255,255,0.05)',
-                                    display: 'grid',
-                                    gridTemplateColumns: '1fr',
-                                    gap: '24px'
-                                }}>
-                                    {project.metrics.map(metric => (
-                                        <div key={metric.label} style={{
-                                            padding: '20px',
-                                            background: 'rgba(255,255,255,0.03)',
-                                            borderRadius: '16px',
-                                            border: '1px solid rgba(255,255,255,0.02)'
-                                        }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-                                                {metric.label}
-                                            </div>
-                                            <div style={{ fontSize: '1.4rem', fontWeight: 600, color: '#fff' }}>
-                                                {metric.value}
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fff' }}>
+                                    {metric.value}
                                 </div>
-                            </GlassPanel>
+                            </div>
                         ))}
                     </div>
-                </section>
 
-                {/* Footer */}
-                <footer style={{ 
-                    textAlign: 'center', 
-                    padding: '60px 0 20px', 
-                    borderTop: '1px solid rgba(255,255,255,0.05)',
-                    color: 'rgba(255,255,255,0.4)',
-                    fontSize: '0.9rem'
-                }}>
-                    <p>© {new Date().getFullYear()} Dohyun Park. Crafted with Next.js & Three.js.</p>
-                </footer>
-            </div>
-        </main>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                        {activeCard.tags.map(tag => <SkillChip key={tag.label} tag={tag} />)}
+                    </div>
+
+                    {activeCard.href && (
+                        <div style={{ marginTop: '32px' }}>
+                            <a href={activeCard.href} target="_blank" rel="noreferrer" style={{
+                                display: 'inline-block',
+                                padding: '14px 32px',
+                                borderRadius: '12px',
+                                background: '#7aaef4',
+                                color: '#000',
+                                textDecoration: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.95rem',
+                                transition: 'transform 0.2s',
+                            }}>
+                                View Source Code
+                            </a>
+                        </div>
+                    )}
+                </div>
+            )}
+            
+            <style dangerouslySetInnerHTML={{__html: `
+                @keyframes fadeInUp {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes pulse {
+                    0% { opacity: 0.6; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0.6; }
+                }
+            `}} />
+        </div>
     )
 }
