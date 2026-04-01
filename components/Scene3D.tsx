@@ -70,26 +70,55 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
       (gltf) => {
         const model = gltf.scene
         
-        // -- BULLETPROOF FRAMING --
-        // Force the model to be roughly 40 units in max dimension
-        const box = new THREE.Box3().setFromObject(model)
-        const size = box.getSize(new THREE.Vector3())
-        const maxDim = Math.max(size.x, size.y, size.z)
-
-        if (maxDim > 0) {
-            const scaleFactor = 40 / maxDim
-            model.scale.setScalar(scaleFactor)
-        }
-        
-        // Update matrices to apply scale
+        // -- EXTREME BULLETPROOF FRAMING (Handles NaN Geometries) --
+        // Calculate bounding box manually to ignore any corrupt (NaN) geometries in the GLTF
         model.updateMatrixWorld(true)
+        const box = new THREE.Box3()
+        model.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+                const mesh = child as THREE.Mesh
+                if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox()
+                const b = mesh.geometry.boundingBox
+                if (b && isFinite(b.max.x) && !isNaN(b.max.x)) {
+                    const worldBox = b.clone().applyMatrix4(mesh.matrixWorld)
+                    box.union(worldBox)
+                }
+            }
+        })
+
+        const size = new THREE.Vector3()
+        const center = new THREE.Vector3()
         
-        // Exactly center it to origin
-        const scaledBox = new THREE.Box3().setFromObject(model)
-        const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
-        model.position.x -= scaledCenter.x
-        model.position.y -= scaledCenter.y
-        model.position.z -= scaledCenter.z
+        if (!box.isEmpty() && isFinite(box.max.x)) {
+            box.getSize(size)
+            box.getCenter(center)
+            const maxDim = Math.max(size.x, size.y, size.z)
+            
+            if (maxDim > 0) {
+                const scaleFactor = 40 / maxDim
+                model.scale.setScalar(scaleFactor)
+                model.updateMatrixWorld(true)
+                
+                // Re-center
+                const scaledBox = new THREE.Box3()
+                model.traverse((child) => {
+                    if ((child as THREE.Mesh).isMesh) {
+                        const mesh = child as THREE.Mesh
+                        const b = mesh.geometry.boundingBox
+                        if (b && isFinite(b.max.x) && !isNaN(b.max.x)) {
+                            const worldBox = b.clone().applyMatrix4(mesh.matrixWorld)
+                            scaledBox.union(worldBox)
+                        }
+                    }
+                })
+                scaledBox.getCenter(center)
+            }
+        }
+
+        // Apply negative center offset to position the valid geometries exactly at origin
+        model.position.x -= center.x
+        model.position.y -= center.y
+        model.position.z -= center.z
 
         // Expand camera planes heavily
         camera.near = 0.5
@@ -112,23 +141,32 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
         const possibleMeshes: THREE.Mesh[] = []
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
-            // Pick relatively large or named meshes
             const mesh = child as THREE.Mesh
-            const b = new THREE.Box3().setFromObject(mesh)
-            const size = new THREE.Vector3()
-            b.getSize(size)
-            // Filtering out very tiny text/line meshes based on size volume
-            if (size.x * size.y * size.z > 0.5) {
-                possibleMeshes.push(mesh)
+            
+            // Generate bounding boxes and ignore corrupted geometry
+            if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox()
+            const b = mesh.geometry.boundingBox
+            if (b && isFinite(b.max.x) && !isNaN(b.max.x)) {
+                // Determine rough volume
+                const dx = b.max.x - b.min.x
+                const dy = b.max.y - b.min.y
+                const dz = b.max.z - b.min.z
+                
+                // Keep very low threshold since we already filtered out NaN geometries
+                if (dx * dy * dz > 0.000001) {
+                    possibleMeshes.push(mesh)
+                }
             }
           }
         })
 
         // Sort by volume descending so we assign main boxes first
         possibleMeshes.sort((a, b) => {
-            const vA = new THREE.Box3().setFromObject(a).getSize(new THREE.Vector3())
-            const vB = new THREE.Box3().setFromObject(b).getSize(new THREE.Vector3())
-            return (vB.x*vB.y*vB.z) - (vA.x*vA.y*vA.z)
+            const bA = a.geometry.boundingBox!
+            const bB = b.geometry.boundingBox!
+            const vA = (bA.max.x - bA.min.x) * (bA.max.y - bA.min.y) * (bA.max.z - bA.min.z)
+            const vB = (bB.max.x - bB.min.x) * (bB.max.y - bB.min.y) * (bB.max.z - bB.min.z)
+            return vB - vA
         })
 
         // Map the first few suitable meshes to CARDS
