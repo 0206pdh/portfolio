@@ -59,9 +59,10 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
     directionalLight.position.set(20, 30, 20)
     scene.add(directionalLight)
 
-    const directionalLight2 = new THREE.DirectionalLight(0xaabbff, 1)
-    directionalLight2.position.set(-20, -10, -20)
-    scene.add(directionalLight2)
+    // Optional debug grid so we always see where the ground is
+    const gridHelper = new THREE.GridHelper(200, 50, 0x888888, 0xcccccc)
+    gridHelper.position.y = -15
+    scene.add(gridHelper)
 
     const loader = new GLTFLoader()
     loader.load(
@@ -69,25 +70,43 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
       (gltf) => {
         const model = gltf.scene
         
-        // Frame the object properly using Camera instead of mutating the model
+        // -- BULLETPROOF FRAMING --
+        // Force the model to be roughly 40 units in max dimension
         const box = new THREE.Box3().setFromObject(model)
         const size = box.getSize(new THREE.Vector3())
-        const center = box.getCenter(new THREE.Vector3())
         const maxDim = Math.max(size.x, size.y, size.z)
 
-        const fov = camera.fov * (Math.PI / 180)
-        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2))
-        cameraZ *= 2.0 // Add padding
+        if (maxDim > 0) {
+            const scaleFactor = 40 / maxDim
+            model.scale.setScalar(scaleFactor)
+        }
+        
+        // Update matrices to apply scale
+        model.updateMatrixWorld(true)
+        
+        // Exactly center it to origin
+        const scaledBox = new THREE.Box3().setFromObject(model)
+        const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
+        model.position.x -= scaledCenter.x
+        model.position.y -= scaledCenter.y
+        model.position.z -= scaledCenter.z
 
-        camera.position.set(center.x, center.y + maxDim * 0.2, center.z + cameraZ)
-        controls.target.copy(center)
+        // Expand camera planes heavily
+        camera.near = 0.5
+        camera.far = 15000
+        camera.updateProjectionMatrix()
+
+        // Safely place camera back from the 40-unit model
+        camera.position.set(0, 15, 60)
+        controls.target.set(0, 0, 0)
+        controls.update()
 
         // Update references for reset/lerp
         sceneRef.current.defaultCameraPos.copy(camera.position)
         sceneRef.current.targetCameraPos = sceneRef.current.defaultCameraPos.clone()
-        sceneRef.current.targetCameraLookAt = center.clone()
+        sceneRef.current.targetCameraLookAt = new THREE.Vector3(0, 0, 0)
         
-        console.log(`Model Loaded! Size:`, size, `Center:`, center, `MaxDim:`, maxDim)
+        console.log(`Model Reloaded! Scaled to 40 max.`)
 
         // Find some distinct meshes to attach CARDS data to
         const possibleMeshes: THREE.Mesh[] = []
