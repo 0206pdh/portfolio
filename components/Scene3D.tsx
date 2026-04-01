@@ -69,25 +69,25 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
       (gltf) => {
         const model = gltf.scene
         
-        // Center and scale the model so it is always visible
+        // Frame the object properly using Camera instead of mutating the model
         const box = new THREE.Box3().setFromObject(model)
         const size = box.getSize(new THREE.Vector3())
         const center = box.getCenter(new THREE.Vector3())
-        
         const maxDim = Math.max(size.x, size.y, size.z)
-        if (maxDim > 0) {
-            const scaleFactor = 20 / maxDim
-            model.scale.setScalar(scaleFactor)
-        }
-        
-        // Re-center after scaling
-        const scaledBox = new THREE.Box3().setFromObject(model)
-        const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
-        model.position.x -= scaledCenter.x
-        model.position.y -= scaledCenter.y
-        model.position.z -= scaledCenter.z
 
-        console.log(`Model Loaded! Original Size:`, size, `MaxDim:`, maxDim)
+        const fov = camera.fov * (Math.PI / 180)
+        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2))
+        cameraZ *= 2.0 // Add padding
+
+        camera.position.set(center.x, center.y + maxDim * 0.2, center.z + cameraZ)
+        controls.target.copy(center)
+
+        // Update references for reset/lerp
+        sceneRef.current.defaultCameraPos.copy(camera.position)
+        sceneRef.current.targetCameraPos = sceneRef.current.defaultCameraPos.clone()
+        sceneRef.current.targetCameraLookAt = center.clone()
+        
+        console.log(`Model Loaded! Size:`, size, `Center:`, center, `MaxDim:`, maxDim)
 
         // Find some distinct meshes to attach CARDS data to
         const possibleMeshes: THREE.Mesh[] = []
@@ -275,7 +275,7 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
         width: '100vw',
         height: '100vh',
         zIndex: 0,
-        background: '#04070a' // Subtle dark space gradient
+        background: '#f4f7f6' // Bright background per request
       }}
     />
   )

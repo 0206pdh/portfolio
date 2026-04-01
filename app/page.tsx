@@ -10,7 +10,7 @@ export default function Home() {
   const [activeCardId, setActiveCardId] = useState<string | null>(null)
 
   return (
-    <main style={{ width: '100%', height: '100vh', overflow: 'hidden', background: '#000205' }}>
+    <main style={{ width: '100%', height: '100vh', overflow: 'hidden', background: '#f4f7f6' }}>
       <Scene3D activeCardId={activeCardId} onSelectCard={setActiveCardId} />
       <PortfolioUI activeCardId={activeCardId} onClose={() => setActiveCardId(null)} />
     </main>
