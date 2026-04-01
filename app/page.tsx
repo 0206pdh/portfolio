@@ -1,11 +1,13 @@
 import dynamic from 'next/dynamic'
 
-const CityScene = dynamic(() => import('@/components/CityScene'), { ssr: false })
+const Scene3D = dynamic(() => import('@/components/Scene3D'), { ssr: false })
+const PortfolioUI = dynamic(() => import('@/components/PortfolioUI'), { ssr: false })
 
 export default function Home() {
   return (
-    <main style={{ width: '100%', minHeight: '100vh', background: '#020810' }}>
-      <CityScene />
-    </main>
+    <>
+      <Scene3D />
+      <PortfolioUI />
+    </>
   )
 }
