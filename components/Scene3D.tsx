@@ -69,12 +69,25 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
       (gltf) => {
         const model = gltf.scene
         
-        // Center the model
+        // Center and scale the model so it is always visible
         const box = new THREE.Box3().setFromObject(model)
+        const size = box.getSize(new THREE.Vector3())
         const center = box.getCenter(new THREE.Vector3())
-        model.position.x += (model.position.x - center.x)
-        model.position.y += (model.position.y - center.y)
-        model.position.z += (model.position.z - center.z)
+        
+        const maxDim = Math.max(size.x, size.y, size.z)
+        if (maxDim > 0) {
+            const scaleFactor = 20 / maxDim
+            model.scale.setScalar(scaleFactor)
+        }
+        
+        // Re-center after scaling
+        const scaledBox = new THREE.Box3().setFromObject(model)
+        const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
+        model.position.x -= scaledCenter.x
+        model.position.y -= scaledCenter.y
+        model.position.z -= scaledCenter.z
+
+        console.log(`Model Loaded! Original Size:`, size, `MaxDim:`, maxDim)
 
         // Find some distinct meshes to attach CARDS data to
         const possibleMeshes: THREE.Mesh[] = []
@@ -112,7 +125,15 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
         scene.add(model)
       },
       undefined,
-      (error) => console.error('Error loading gltf:', error)
+      (error) => {
+          console.error('Error loading gltf:', error)
+          // Add a fallback cube if loading fails just so the user sees something
+          const geom = new THREE.BoxGeometry(10, 10, 10)
+          const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 })
+          const fallback = new THREE.Mesh(geom, mat)
+          scene.add(fallback)
+          sceneRef.current.interactiveMeshes = [{ mesh: fallback, cardId: CARDS[0].id }]
+      }
     )
 
     // Raycaster for click events
