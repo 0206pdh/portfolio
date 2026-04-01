@@ -4,6 +4,9 @@ import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { CARDS } from '@/lib/data'
 
 interface Scene3DProps {
@@ -22,6 +25,7 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
     defaultCameraPos: THREE.Vector3
     targetCameraPos: THREE.Vector3 | null
     targetCameraLookAt: THREE.Vector3 | null
+    composer?: EffectComposer | null
   }>({
     controls: null,
     camera: null,
@@ -55,14 +59,25 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.2)
     scene.add(ambientLight)
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
     directionalLight.position.set(20, 30, 20)
     scene.add(directionalLight)
 
-    // Optional debug grid so we always see where the ground is
-    const gridHelper = new THREE.GridHelper(200, 50, 0x888888, 0xcccccc)
-    gridHelper.position.y = -15
-    scene.add(gridHelper)
+    // Add Post-Processing Composer for Neon Glow (Bloom)
+    const composer = new EffectComposer(renderer)
+    const renderPass = new RenderPass(scene, camera)
+    composer.addPass(renderPass)
+
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      1.8,  // strength
+      0.5,  // radius
+      0.2   // threshold - low enough to catch glowing neon textures
+    )
+    composer.addPass(bloomPass)
+
+    // Store composer reference to clean up and resize later
+    sceneRef.current.composer = composer
 
     const loader = new GLTFLoader()
     loader.load(
@@ -80,6 +95,24 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
                 if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox()
                 const b = mesh.geometry.boundingBox
                 if (b && isFinite(b.max.x) && !isNaN(b.max.x)) {
+                    const localSize = b.getSize(new THREE.Vector3())
+                    
+                    // DETECT AND HIDE GIANT FLOOR PLANES
+                    // Spline often exports a massive background plane that ruins auto-framing
+                    if (Math.max(localSize.x, localSize.y, localSize.z) > 500) {
+                        mesh.visible = false // Hide the grey slab
+                        return // Do NOT add it to the bounding box!
+                    }
+
+                    // Boost Emissive glow for dark mode
+                    if (mesh.material && (mesh.material as any).emissive) {
+                        const mat = mesh.material as THREE.MeshStandardMaterial
+                        // If it has any emissive color, multiply it greatly for the Bloom filter
+                        if (mat.emissive.r > 0 || mat.emissive.g > 0 || mat.emissive.b > 0) {
+                            mat.emissiveIntensity = 3.0
+                        }
+                    }
+
                     const worldBox = b.clone().applyMatrix4(mesh.matrixWorld)
                     box.union(worldBox)
                 }
@@ -105,7 +138,7 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
                     if ((child as THREE.Mesh).isMesh) {
                         const mesh = child as THREE.Mesh
                         const b = mesh.geometry.boundingBox
-                        if (b && isFinite(b.max.x) && !isNaN(b.max.x)) {
+                        if (b && isFinite(b.max.x) && !isNaN(b.max.x) && mesh.visible) {
                             const worldBox = b.clone().applyMatrix4(mesh.matrixWorld)
                             scaledBox.union(worldBox)
                         }
@@ -142,6 +175,8 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
         model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh
+            if (!mesh.visible) return // Skip the giant hidden floor
+
             
             // Generate bounding boxes and ignore corrupted geometry
             if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox()
@@ -241,6 +276,9 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
       camera.aspect = window.innerWidth / window.innerHeight
       camera.updateProjectionMatrix()
       renderer.setSize(window.innerWidth, window.innerHeight)
+      if (sceneRef.current.composer) {
+          sceneRef.current.composer.setSize(window.innerWidth, window.innerHeight)
+      }
     }
     window.addEventListener('resize', onResize)
 
@@ -279,7 +317,12 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
         }
       })
 
-      renderer.render(scene, camera)
+      // Use composer instead of raw renderer
+      if (sceneRef.current.composer) {
+          sceneRef.current.composer.render()
+      } else {
+          renderer.render(scene, camera)
+      }
     }
     animate()
 
@@ -332,7 +375,7 @@ export default function Scene3D({ activeCardId, onSelectCard }: Scene3DProps) {
         width: '100vw',
         height: '100vh',
         zIndex: 0,
-        background: '#f4f7f6' // Bright background per request
+        background: '#040608' // Deep dark space background
       }}
     />
   )

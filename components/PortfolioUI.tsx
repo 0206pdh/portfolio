@@ -87,20 +87,19 @@ export default function PortfolioUI({ activeCardId, onClose }: PortfolioUIProps)
                 display: 'flex',
                 justifyContent: 'space-between',
                 pointerEvents: 'auto',
-                color: '#1a202c' // Dark text for bright background
             }}>
                 <div style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.05em' }}>
-                    <span style={{ color: '#3182ce' }}>D</span>.P
+                    <span style={{ color: '#7aaef4' }}>D</span>.P
                 </div>
                 {!activeCardId && (
                     <div style={{
                         padding: '10px 24px',
                         borderRadius: '999px',
-                        background: 'rgba(0,0,0,0.05)',
-                        border: '1px solid rgba(0,0,0,0.1)',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
                         backdropFilter: 'blur(10px)',
                         fontSize: '0.9rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         WebkitBackdropFilter: 'blur(10px)',
                         animation: 'pulse 3s infinite'
                     }}>
