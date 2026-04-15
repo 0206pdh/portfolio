@@ -189,6 +189,19 @@ select {
   font-size: 0.9rem;
 }
 
+.manage-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--text);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 .category-index {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -388,16 +401,178 @@ select {
   color: var(--muted-strong);
 }
 
+.content-items li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.content-items strong {
+  color: var(--text);
+}
+
+.content-items p {
+  margin-top: 8px;
+  color: var(--muted-strong);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.content-items a,
+.empty-panel a {
+  flex: 0 0 auto;
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .empty-panel {
   display: flex;
   min-height: 96px;
   align-items: center;
   justify-content: center;
+  gap: 14px;
   border: 1px dashed var(--line-strong);
   border-radius: 8px;
   background: var(--surface);
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+.manager-hero {
+  padding: 56px 0 34px;
+  border-bottom: 1px solid var(--line);
+}
+
+.manager-hero h1 {
+  max-width: 820px;
+  font-size: clamp(2.5rem, 6vw, 5.3rem);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.manager-hero p:not(.eyebrow) {
+  max-width: 690px;
+  margin-top: 20px;
+  color: var(--muted-strong);
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.manager-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  padding-top: 28px;
+}
+
+.manager-form,
+.editor-card,
+.manager-category {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+}
+
+.manager-form {
+  position: sticky;
+  top: 84px;
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.manager-form label,
+.editor-card label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.manager-form input,
+.manager-form select,
+.manager-form textarea,
+.editor-card input,
+.editor-card textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 11px 12px;
+  outline: none;
+}
+
+.manager-form textarea,
+.editor-card textarea {
+  resize: vertical;
+}
+
+.manager-form input:focus,
+.manager-form select:focus,
+.manager-form textarea:focus,
+.editor-card input:focus,
+.editor-card textarea:focus {
+  border-color: var(--line-strong);
+  background: #ffffff;
+}
+
+.manager-form button,
+.editor-card button {
+  min-height: 44px;
+  border: 1px solid var(--text);
+  border-radius: 8px;
+  background: var(--text);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.manager-form .secondary-button,
+.editor-card .secondary-button {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--muted-strong);
+}
+
+.form-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.manager-list {
+  display: grid;
+  gap: 16px;
+}
+
+.manager-category {
+  padding: 20px;
+}
+
+.manager-category h2 {
+  font-size: 1.6rem;
+}
+
+.manager-group {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.manager-group h3 {
+  font-size: 1rem;
+}
+
+.editor-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 16px;
 }
 
 @media (max-width: 900px) {
@@ -424,7 +599,8 @@ select {
   .intro,
   .category-section,
   .detail-hero,
-  .detail-card {
+  .detail-card,
+  .manager-grid {
     grid-template-columns: 1fr;
   }
 
@@ -448,6 +624,10 @@ select {
 
   .category-content {
     padding: 24px;
+  }
+
+  .manager-form {
+    position: static;
   }
 }
 

@@ -6,8 +6,16 @@ export type Category = {
   groups: {
     title: string
     summary: string
-    items: string[]
+    items: ContentItem[]
   }[]
+}
+
+export type ContentItem = {
+  id: string
+  title: string
+  description: string
+  href?: string
+  createdAt: string
 }
 
 export const categories: Category[] = [
