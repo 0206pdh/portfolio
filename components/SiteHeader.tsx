@@ -1,7 +1,6 @@
-import { SocialLink, categories, socialLinks } from '@/lib/siteContent'
+import { SocialLink, socialLinks } from '@/lib/siteContent'
 
 type SiteHeaderProps = {
-  current?: string
   showManage?: boolean
 }
 
@@ -51,20 +50,15 @@ export function SocialIcon({ id }: { id: SocialLink['id'] }) {
   }
 }
 
-export default function SiteHeader({ current, showManage = false }: SiteHeaderProps) {
+export default function SiteHeader({ showManage = false }: SiteHeaderProps) {
   return (
     <header className="site-header">
       <a className="brand" href="/">
         Dohyun Park
       </a>
       <nav className="top-nav" aria-label="Main categories">
-        {categories.map((category) => (
-          <a key={category.id} href={`/${category.id}`} aria-current={current === category.id ? 'page' : undefined}>
-            {category.title}
-          </a>
-        ))}
         {showManage && (
-          <a href="/manage" aria-current={current === 'manage' ? 'page' : undefined}>
+          <a href="/manage" aria-current="page">
             Manage
           </a>
         )}

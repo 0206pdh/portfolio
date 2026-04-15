@@ -17,7 +17,7 @@ export default function EditableCategory({ categoryId }: EditableCategoryProps) 
 
   return (
     <main className="site-shell">
-      <SiteHeader current={category.id} />
+      <SiteHeader />
 
       <section className="detail-hero">
         <div>
