@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Dohyun Park | Blog Portfolio',
+  title: 'Dohyun Park | Cloud & Backend Portfolio',
   description:
-    'Blog-style portfolio for Dohyun Park, organized by blog posts, projects, and GitHub repositories.',
-  keywords: ['Cloud Engineer', 'AWS', 'DevOps', 'Backend', 'Portfolio', 'Blog'],
+    'Cloud and backend portfolio for Dohyun Park, organized with GitHub repositories, Velog posts, and contact links.',
+  keywords: ['Cloud Engineer', 'AWS', 'DevOps', 'Backend', 'Portfolio', 'Velog', 'GitHub'],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

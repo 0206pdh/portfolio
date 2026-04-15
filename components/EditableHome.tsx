@@ -1,7 +1,9 @@
 'use client'
 
 import SiteHeader from '@/components/SiteHeader'
+import { SocialIcon } from '@/components/SiteHeader'
 import { useEditableContent } from '@/components/useEditableContent'
+import { profile, socialLinks } from '@/lib/siteContent'
 
 export default function EditableHome() {
   const { content } = useEditableContent()
@@ -17,22 +19,32 @@ export default function EditableHome() {
       <section id="top" className="intro">
         <div className="intro-copy">
           <p className="eyebrow">Blog Portfolio</p>
-          <h1>Write and manage your portfolio from the site.</h1>
+          <h1>{profile.headline}</h1>
           <p className="intro-text">
-            Blog, Projects, and GitHub are ready as empty sections. Use Manage to add,
-            edit, or remove your own content without touching the code.
+            {profile.summary}
           </p>
+          <div className="focus-list" aria-label="Focus areas">
+            {profile.focus.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
         </div>
         <div className="intro-panel" aria-label="Content state">
           <article className="recent-item">
-            <span>{itemCount > 0 ? 'Content' : 'Ready'}</span>
-            <h2>{itemCount > 0 ? `${itemCount} item(s) saved in this browser.` : 'No content has been added yet.'}</h2>
+            <span>{profile.role}</span>
+            <h2>{profile.name}</h2>
             <p>
-              {itemCount > 0
-                ? 'Open a category to review what you saved.'
-                : 'Open Manage to start writing posts, project notes, or repository links.'}
+              {profile.location} / {itemCount} saved item(s) in this browser.
             </p>
           </article>
+          <div className="contact-grid" aria-label="Contact links">
+            {socialLinks.map((link) => (
+              <a key={link.id} href={link.href} target={link.id === 'email' ? undefined : '_blank'} rel="noreferrer">
+                <SocialIcon id={link.id} />
+                <span>{link.label}</span>
+              </a>
+            ))}
+          </div>
           <a className="manage-link" href="/manage">
             Open Manage
           </a>
