@@ -113,7 +113,7 @@ export default function ContentManager() {
 
   return (
     <main className="site-shell">
-      <SiteHeader current="manage" />
+      <SiteHeader current="manage" showManage />
 
       <section className="manager-hero">
         <p className="eyebrow">Manage</p>

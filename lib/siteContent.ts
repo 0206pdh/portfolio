@@ -28,10 +28,10 @@ export const profile = {
   name: 'Dohyun Park',
   role: 'Cloud / Backend Engineer',
   location: 'South Korea',
-  headline: 'Cloud infrastructure, backend systems, and DevOps focused portfolio.',
+  headline: 'Cloud & Backend Portfolio',
   summary:
-    'I am learning AWS-based cloud infrastructure, backend service development, DevOps, and system design. I focus on building scalable, reliable, and maintainable systems from application logic to infrastructure.',
-  focus: ['AWS Architecture', 'Backend APIs', 'DevOps', 'System Design', 'CI/CD'],
+    'AWS, backend systems, DevOps, and system design.',
+  focus: ['AWS', 'Backend', 'DevOps', 'System Design'],
 }
 
 export const socialLinks: SocialLink[] = [
@@ -62,16 +62,16 @@ export const categories: Category[] = [
     id: 'blog',
     title: 'Blog',
     label: 'Velog',
-    description: 'Velog posts and study logs about backend, cloud, and system design.',
+    description: 'Velog posts and study logs.',
     groups: [
       {
         title: 'Velog',
-        summary: 'External blog posts are organized on Velog.',
+        summary: 'Posts on Velog.',
         items: [
           {
             id: 'velog-posts',
             title: '0206pdh.log',
-            description: 'Blog posts and technical notes on Velog.',
+            description: 'Blog posts and notes.',
             href: 'https://velog.io/@0206pdh/posts',
             createdAt: '2026-04-15T00:00:00.000Z',
           },
@@ -79,7 +79,7 @@ export const categories: Category[] = [
       },
       {
         title: 'Series',
-        summary: 'Grouped writing and topic-based study records.',
+        summary: 'Grouped writing.',
         items: [
           {
             id: 'velog-series',
@@ -92,7 +92,7 @@ export const categories: Category[] = [
       },
       {
         title: 'Drafts',
-        summary: 'Use Manage to add private notes or draft summaries for this site.',
+        summary: 'Personal drafts.',
         items: [],
       },
     ],
@@ -101,16 +101,16 @@ export const categories: Category[] = [
     id: 'projects',
     title: 'Projects',
     label: 'Build',
-    description: 'Selected repositories and project writeups from GitHub.',
+    description: 'Selected GitHub repositories.',
     groups: [
       {
         title: 'Featured',
-        summary: 'Current and representative projects.',
+        summary: 'Main projects.',
         items: [
           {
             id: 'portfolio',
             title: 'portfolio',
-            description: 'TypeScript portfolio site deployed from GitHub.',
+            description: 'TypeScript portfolio site.',
             href: 'https://github.com/0206pdh/portfolio',
             createdAt: '2026-04-15T00:00:00.000Z',
           },
@@ -124,7 +124,7 @@ export const categories: Category[] = [
           {
             id: 'fin-spring',
             title: 'fin_spring',
-            description: 'Finance-related TypeScript project repository.',
+            description: 'Finance TypeScript project.',
             href: 'https://github.com/0206pdh/fin_spring',
             createdAt: '2026-04-08T00:00:00.000Z',
           },
@@ -132,7 +132,7 @@ export const categories: Category[] = [
       },
       {
         title: 'Backend / Cloud',
-        summary: 'Backend, cloud, and infrastructure-oriented repositories.',
+        summary: 'Backend and cloud work.',
         items: [
           {
             id: 'velog-cli',
@@ -151,7 +151,7 @@ export const categories: Category[] = [
           {
             id: 'dockviz-cli',
             title: 'dockviz-cli',
-            description: 'Go CLI repository for Docker-related work.',
+            description: 'Go CLI repository.',
             href: 'https://github.com/0206pdh/dockviz-cli',
             createdAt: '2026-04-06T00:00:00.000Z',
           },
@@ -159,19 +159,19 @@ export const categories: Category[] = [
       },
       {
         title: 'Archive',
-        summary: 'Older project repositories and experiments.',
+        summary: 'Older repositories.',
         items: [
           {
             id: 'youtube-live-comment-filter',
             title: 'youtube_live_comment_filter',
-            description: 'Python repository for YouTube live comment filtering.',
+            description: 'YouTube live comment filtering.',
             href: 'https://github.com/0206pdh/youtube_live_comment_filter',
             createdAt: '2026-03-26T00:00:00.000Z',
           },
           {
             id: 'coding-test-hub',
             title: 'coding-test-hub',
-            description: 'Baekjoon Online Judge auto-push repository.',
+            description: 'Baekjoon auto-push repository.',
             href: 'https://github.com/0206pdh/coding-test-hub',
             createdAt: '2026-03-20T00:00:00.000Z',
           },
@@ -183,23 +183,23 @@ export const categories: Category[] = [
     id: 'github',
     title: 'GitHub',
     label: 'Code',
-    description: 'GitHub profile, repository links, and development activity.',
+    description: 'Profile, repositories, and activity.',
     groups: [
       {
         title: 'Profile',
-        summary: 'Main GitHub profile and profile README.',
+        summary: 'Main profile.',
         items: [
           {
             id: 'github-profile',
             title: '0206pdh',
-            description: 'GitHub profile with cloud, backend, and DevOps learning direction.',
+            description: 'GitHub profile.',
             href: 'https://github.com/0206pdh',
             createdAt: '2026-04-15T00:00:00.000Z',
           },
           {
             id: 'profile-readme',
             title: 'Profile README',
-            description: 'About Me, Tech Stack, Currently Learning, and Contact.',
+            description: 'About, stack, and contact.',
             href: 'https://github.com/0206pdh/0206pdh',
             createdAt: '2026-04-09T00:00:00.000Z',
           },
@@ -207,12 +207,12 @@ export const categories: Category[] = [
       },
       {
         title: 'Repositories',
-        summary: 'Recently updated public repositories.',
+        summary: 'Public repositories.',
         items: [
           {
             id: 'repo-list',
             title: 'Public repositories',
-            description: 'Browse all public repositories on GitHub.',
+            description: 'All public repositories.',
             href: 'https://github.com/0206pdh?tab=repositories',
             createdAt: '2026-04-15T00:00:00.000Z',
           },
@@ -220,12 +220,12 @@ export const categories: Category[] = [
       },
       {
         title: 'Activity',
-        summary: 'Contribution history and GitHub activity.',
+        summary: 'GitHub activity.',
         items: [
           {
             id: 'github-activity',
             title: 'Contribution activity',
-            description: 'GitHub contribution graph and recent activity.',
+            description: 'Contribution graph and activity.',
             href: 'https://github.com/0206pdh',
             createdAt: '2026-04-15T00:00:00.000Z',
           },

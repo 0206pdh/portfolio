@@ -2,6 +2,7 @@ import { SocialLink, categories, socialLinks } from '@/lib/siteContent'
 
 type SiteHeaderProps = {
   current?: string
+  showManage?: boolean
 }
 
 export function SocialIcon({ id }: { id: SocialLink['id'] }) {
@@ -50,7 +51,7 @@ export function SocialIcon({ id }: { id: SocialLink['id'] }) {
   }
 }
 
-export default function SiteHeader({ current }: SiteHeaderProps) {
+export default function SiteHeader({ current, showManage = false }: SiteHeaderProps) {
   return (
     <header className="site-header">
       <a className="brand" href="/">
@@ -62,9 +63,11 @@ export default function SiteHeader({ current }: SiteHeaderProps) {
             {category.title}
           </a>
         ))}
-        <a href="/manage" aria-current={current === 'manage' ? 'page' : undefined}>
-          Manage
-        </a>
+        {showManage && (
+          <a href="/manage" aria-current={current === 'manage' ? 'page' : undefined}>
+            Manage
+          </a>
+        )}
       </nav>
       <div className="social-nav" aria-label="Contact links">
         {socialLinks.map((link) => (
